@@ -4,7 +4,6 @@
 #include "Animations.h"
 #include "Backtrack.h"
 #include "Tickbase.h"
-
 #include "../SDK/ConVar.h"
 #include "../SDK/Entity.h"
 #include "../SDK/FrameStage.h"
@@ -43,11 +42,8 @@ void Backtrack::run(UserCmd* cmd) noexcept
     if (!localPlayer || !localPlayer->isAlive())
         return;
 
-    if (!config->backtrack.ignoreFlash && localPlayer->isFlashed())
-        return;
-
     const auto activeWeapon = localPlayer->getActiveWeapon();
-    if (!activeWeapon || !activeWeapon->clip())
+    if (!activeWeapon)
         return;
 
     auto localPlayerEyePosition = localPlayer->getEyePosition();
@@ -57,7 +53,6 @@ void Backtrack::run(UserCmd* cmd) noexcept
     int bestRecord{ };
 
     const auto aimPunch = activeWeapon->requiresRecoilControl() ? localPlayer->getAimPunch() : Vector{ };
-
     for (int i = 1; i <= interfaces->engine->getMaxClients(); i++) {
         auto entity = interfaces->entityList->getEntity(i);
         if (!entity || entity == localPlayer.get() || entity->isDormant() || !entity->isAlive()
@@ -68,14 +63,11 @@ void Backtrack::run(UserCmd* cmd) noexcept
         if (!player.gotMatrix)
             continue;
 
-        if (player.backtrackRecords.empty() || (!config->backtrack.ignoreSmoke && memory->lineGoesThroughSmoke(localPlayer->getEyePosition(), entity->getAbsOrigin(), 1)))
-            continue;
-
         for (int j = static_cast<int>(player.backtrackRecords.size() - 1U); j >= 0; j--)
         {
             if (Backtrack::valid(player.backtrackRecords.at(j).simulationTime))
             {
-                for (auto position : player.backtrackRecords.at(j).positions) {
+                for (auto& position : player.backtrackRecords.at(j).positions) {
                     auto angle = AimbotFunction::calculateRelativeAngle(localPlayerEyePosition, position, cmd->viewangles + aimPunch);
                     auto fov = std::hypotf(angle.x, angle.y);
                     if (fov < bestFov) {
@@ -134,7 +126,7 @@ void Backtrack::updateIncomingSequences() noexcept
         sequences.push_front(sequence);
     }
 
-    while (sequences.size() > 2048)
+    while (sequences.size() > 2048U)
         sequences.pop_back();
 }
 
@@ -148,7 +140,7 @@ bool Backtrack::valid(float simtime) noexcept
     if (simtime < deadTime)
         return false;
 
-    const auto extraTickbaseDelta = Tickbase::canShift(Tickbase::getTargetTickShift()) ? ticksToTime(Tickbase::getTargetTickShift()) : 0.0f;
+    const auto extraTickbaseDelta = Tickbase::canShift(Tickbase::getTargetTickShift()) || Tickbase::getTargetTickShift() ? ticksToTime(Tickbase::getTargetTickShift()) : 0.0f;
     const auto delta = std::clamp(network->getLatency(0) + network->getLatency(1) + getLerp(), 0.f, cvars.maxUnlag->getFloat()) - (memory->globalVars->serverTime() - extraTickbaseDelta - simtime);
     return std::abs(delta) <= 0.2f;
 }

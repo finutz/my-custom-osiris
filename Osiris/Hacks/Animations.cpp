@@ -211,7 +211,7 @@ void Animations::fake() noexcept
         memory->setAbsAngle(localPlayer.get(), Vector{ 0, fakeAnimState->footYaw, 0 });
         std::memcpy(localPlayer->animOverlays(), &layers, sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         localPlayer->getAnimationLayer(ANIMATION_LAYER_LEAN)->weight = std::numeric_limits<float>::epsilon();
-        
+
         gotMatrix = localPlayer->setupBones(fakematrix.data(), localPlayer->getBoneCache().size, 0x7FF00, memory->globalVars->currenttime);
         gotMatrixFakelag = gotMatrix;
         if (gotMatrix)
@@ -469,6 +469,7 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 entity->getEFlags() &= ~0x1000;
                 entity->getAbsVelocity() = player.velocity;
                 entity->duckAmount() = player.duckAmount;
+                entity->updateClientSideAnimation();
             }
             updatingEntity = false;
 
@@ -520,7 +521,7 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             }
         }
 
-        std::memcpy(entity->animOverlays(), &layers, sizeof(AnimationLayer)* entity->getAnimationLayersCount());
+        std::memcpy(entity->animOverlays(), &layers, sizeof(AnimationLayer) * entity->getAnimationLayersCount());
 
         //Setupbones
         if (runPostUpdate)
@@ -556,6 +557,7 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             record.mins = player.mins;
             record.maxs = player.maxs;
             std::copy(player.matrix.begin(), player.matrix.end(), record.matrix);
+
             record.positions.push_back(record.matrix[8].origin());
 
             player.backtrackRecords.push_front(record);
@@ -563,6 +565,7 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             while (player.backtrackRecords.size() > 3 && player.backtrackRecords.size() > static_cast<size_t>(timeToTicks(timeLimit)))
                 player.backtrackRecords.pop_back();
         }
+        entity->updateClientSideAnimation();
     }
 }
 
@@ -627,6 +630,7 @@ void verifyLayer(int32_t layer) noexcept
         l.cycle = previousLayer.cycle;
     }
 }
+
 
 void Animations::postDataUpdate() noexcept
 {

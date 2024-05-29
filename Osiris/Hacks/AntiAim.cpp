@@ -88,10 +88,19 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
         case 1: //Down
             cmd->viewangles.x = 89.f;
             break;
-        case 2: //Zero
-            cmd->viewangles.x = 0.f;
+        case 2: //Fake pitch
+        {
+            float pitch = 89.f;
+            if (memory->globalVars->tickCount % 10 == 10 / 2)
+            {
+                pitch = -89.f;
+            }
+            else
+                pitch = 89.f;
+            cmd->viewangles.x = pitch;
             break;
-        case 3: //Up
+        }
+        case 4: //Up
             cmd->viewangles.x = -89.f;
             break;
         default:
@@ -193,18 +202,24 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                 yaw -= flipJitter ? config->rageAntiAim.jitterRange : -config->rageAntiAim.jitterRange;
                 break;
             case 2: {  // 3 way 
-                tw = config->rageAntiAim.twrange;
-                static bool oway = tw * (-1); // -yw
-                static int check=1;
-                if (check == 1) {
-                    yaw += tw * 1.f;
-                    check = 0;
-                }
-                if (check == 0) {
-                    yaw -= tw * 1.f;
-                    check == 1;
-                }
-   
+                
+                    static int stage = 0;
+                    if (stage == 0)
+                    {
+                        yaw -= config->rageAntiAim.twrange;
+                        stage = 1;
+                    }
+                    else if (stage == 1)
+                    {
+                        yaw += 0;
+                        stage = 2;
+                    }
+                    else if (stage == 2)
+                    {
+                        yaw += config->rageAntiAim.twrange;
+                        stage = 0;
+                    }
+                
             }
                 default:
                 break;
@@ -270,18 +285,22 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                     return;
                 }
                 break;
-            case 2: //Sway (flip every lby update)
+            case 2: 
+             {// Sway (flip every lby update)
                 static bool flip = false;
-                if (updateLby())
+                if (updateLby()) // Function to check if LBY update is needed
                 {
-                    cmd->viewangles.y += !flip ? leftDesyncAngle : rightDesyncAngle;
-                    sendPacket = false;
-                    flip = !flip;
-                    return;
+                    flip = !flip; // Flip the state on each LBY update
+                    cmd->viewangles.y += flip ? leftDesyncAngle : rightDesyncAngle;
+                    sendPacket = false; // Ensure the packet is not sent this tick
+                    return; // Exit early to ensure desync is applied correctly
                 }
                 if (!sendPacket)
-                    cmd->viewangles.y += flip ? leftDesyncAngle : rightDesyncAngle;
+                {
+                    cmd->viewangles.y += flip ? rightDesyncAngle : leftDesyncAngle;
+                }
                 break;
+             }
             }
 
             if (sendPacket)

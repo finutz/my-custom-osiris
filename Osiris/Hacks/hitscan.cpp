@@ -16,6 +16,10 @@
 #include "../SDK/WeaponData.h"
 #include "../SDK/ModelInfo.h"
 
+#include <vector>
+#include <future>
+#include <math.h> ///69 mala 
+
 Vector AimbotFunction::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
 {
     Vector delta = destination - source;
@@ -497,19 +501,19 @@ Vector AimbotFunction::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES],
 std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint)
 {
     auto VectorTransformWrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
-    {
-        auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
         {
-            auto dotProducts = [](const float* v1, const float* v2)
-            {
-                return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-            };
-            out[0] = dotProducts(in1, in2[0]) + in2[0][3];
-            out[1] = dotProducts(in1, in2[1]) + in2[1][3];
-            out[2] = dotProducts(in1, in2[2]) + in2[2][3];
+            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
+                {
+                    auto dotProducts = [](const float* v1, const float* v2)
+                        {
+                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+                        };
+                    out[0] = dotProducts(in1, in2[0]) + in2[0][3];
+                    out[1] = dotProducts(in1, in2[1]) + in2[1][3];
+                    out[2] = dotProducts(in1, in2[2]) + in2[2][3];
+                };
+            VectorTransform(&in1.x, in2, &out.x);
         };
-        VectorTransform(&in1.x, in2, &out.x);
-    };
 
     Vector min, max, center;
     VectorTransformWrapper(hitbox->bbMin, matrix[hitbox->bone], min);
@@ -536,24 +540,51 @@ std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 m
     Vector top = Vector{ 0, 0, 1 };
     Vector bottom = Vector{ 0, 0, -1 };
 
-    float multiPoint = (min(_multiPoint, 95)) * 0.01f;
+    float multiPointFactor = std::clamp(_multiPoint * 0.01f, 0.0f, 1.0f);
+
+    auto addPoints = [&](Vector base, float radius)
+        {
+            vecArray.emplace_back(base + top * radius);
+            vecArray.emplace_back(base + right * radius);
+            vecArray.emplace_back(base + left * radius);
+            vecArray.emplace_back(base + bottom * radius);
+        };
 
     switch (_hitbox)
     {
     case Hitboxes::Head:
-        for (auto i = 0; i < 4; ++i)
-            vecArray.emplace_back(center);
-
-        vecArray[1] += top * (hitbox->capsuleRadius * multiPoint);
-        vecArray[2] += right * (hitbox->capsuleRadius * multiPoint);
-        vecArray[3] += left * (hitbox->capsuleRadius * multiPoint);
+        addPoints(center, hitbox->capsuleRadius * multiPointFactor);
         break;
-    default://rest
-        for (auto i = 0; i < 3; ++i)
+    case Hitboxes::Neck:
+    case Hitboxes::Belly:
+    case Hitboxes::Pelvis:
+    case Hitboxes::Thorax:
+    case Hitboxes::UpperChest:
+    case Hitboxes::LowerChest:
+        for (auto i = 0; i < 4; ++i)
+        {
             vecArray.emplace_back(center);
+        }
 
-        vecArray[1] += right * (hitbox->capsuleRadius * multiPoint);
-        vecArray[2] += left * (hitbox->capsuleRadius * multiPoint);
+        vecArray[1] += right * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray[2] += left * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray[3] += forward * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray[4] -= forward * (hitbox->capsuleRadius * multiPointFactor);
+        break;
+    case Hitboxes::LeftFoot:
+    case Hitboxes::RightFoot:
+    case Hitboxes::LeftHand:
+    case Hitboxes::RightHand:
+        addPoints(center, hitbox->capsuleRadius * (multiPointFactor * 0.5f));
+        break;
+    default:
+        for (auto i = 0; i < 3; ++i)
+        {
+            vecArray.emplace_back(center);
+        }
+
+        vecArray[1] += right * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray[2] += left * (hitbox->capsuleRadius * multiPointFactor);
         break;
     }
     return vecArray;
