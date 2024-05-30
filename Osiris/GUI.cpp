@@ -2375,11 +2375,11 @@ void GUI::renderGuiStyle() noexcept {
 
     if (ImGui::Begin(Name, NULL, Flags)) {
         Style->Colors[ImGuiCol_ChildBg] = ImColor(25, 30, 34);
-        ImGui::BeginChild("##Back", ImVec2{ 704, 434 }, false); 
+        ImGui::BeginChild("##Back", ImVec2{ 704, 480 }, false);
         {
             ImGui::SetCursorPos(ImVec2{ 2, 2 });
             Style->Colors[ImGuiCol_ChildBg] = ImColor(19, 22, 27);
-            ImGui::BeginChild("##Main", ImVec2{ 700, 430 }, false); // Adjusted width
+            ImGui::BeginChild("##Main", ImVec2{ 700, 470 }, false); // Adjusted width
             {
                 ImGui::BeginChild("##UP", ImVec2{ 700, 45 }, false); // Adjusted width
                 {
@@ -2416,7 +2416,7 @@ void GUI::renderGuiStyle() noexcept {
                 ImGui::EndChild();
 
                 // New Row for Sub Tabs
-                ImGui::BeginChild("##SubTabs", ImVec2{ 580, 30 }, false); // Adjusted width
+                ImGui::BeginChild("##SubTabs", ImVec2{ 700, 30 }, false); // Adjusted width
                 {
                     float subTabPos = 10;
                     switch (activeTab) {
@@ -2518,26 +2518,23 @@ void GUI::renderGuiStyle() noexcept {
                     {
                         ImGui::EndChild();
 
-                        ImGui::SetCursorPos(ImVec2{ 70, 5 }); // Adjusted position
+                        ImGui::SetCursorPos(ImVec2{ 70, 5 }); // pozitia sub main
                         Style->Colors[ImGuiCol_ChildBg] = ImColor(29, 34, 38);
                         Style->ChildRounding = 5;
-                        ImGui::BeginChild("##SubMain", ImVec2{ 590, 350 }, false); // Adjusted width
+                        ImGui::BeginChild("##SubMain", ImVec2{ 587, 355 }, false); // original 355 , marimea la sub main
                         {
                             ImGui::SetCursorPos(ImVec2{ 10, 10 });
                             switch (activeTab) {
                             case 1: // Legitbot
                                 switch (activeSubTabLegitbot) {
                                 case 1: // Main
-                                    
-                                renderLegitbotWindow();
+                                    renderLegitbotWindow();
                                     break;
                                 case 2: // Backtrack
-                                    
-                                renderBacktrackWindow();
+                                    renderBacktrackWindow();
                                     break;
                                 case 3: // Triggerbot
-                                    
-                                renderTriggerbotWindow();
+                                    renderTriggerbotWindow();
                                     break;
                                 case 4: // AntiAim
                                     renderLegitAntiAimWindow();
@@ -2610,7 +2607,7 @@ void GUI::renderGuiStyle() noexcept {
                         ImGui::EndChild();
                     }
                     ImGui::EndChild();
-                    ImGui::SetCursorPos(ImVec2{ 0, 475 }); // Adjusted position
+                    ImGui::SetCursorPos(ImVec2{ 0, 440 }); // Adjusted position
                     Style->Colors[ImGuiCol_ChildBg] = ImColor(45, 50, 54);
                     Style->ChildRounding = 0;
                     ImGui::BeginChild("##Text", ImVec2{ 700, 20 }, false); // Slightly increased width
@@ -2629,6 +2626,7 @@ void GUI::renderGuiStyle() noexcept {
     ImGui::End();
     Style->Colors[ImGuiCol_WindowBg] = ImVec4(0.07f, 0.07f, 0.09f, 0.75f);
 }
+
 
 
 
