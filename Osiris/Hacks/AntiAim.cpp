@@ -83,27 +83,32 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
     {
         switch (config->rageAntiAim.pitch)
         {
-        case 0: //None
+            case 0: //None
             break;
-        case 1: //Down
+            case 1: //Down
             cmd->viewangles.x = 89.f;
             break;
-        case 2: //Fake pitch
-        {
+            case 2: //FLICK UP
+            {
             float pitch = 89.f;
             if (memory->globalVars->tickCount % 10 == 10 / 2)
             {
                 pitch = -89.f;
             }
-            else
+                else
                 pitch = 89.f;
-            cmd->viewangles.x = pitch;
-            break;
-        }
-        case 4: //Up
-            cmd->viewangles.x = -89.f;
-            break;
-        default:
+                cmd->viewangles.x = pitch;
+             break;
+            }
+            case 4: //Up
+                cmd->viewangles.x = -89.f;
+                break;
+            case 5 :{
+            
+                break;
+            }
+            
+            default:
             break;
         }
     }
