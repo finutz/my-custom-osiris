@@ -2075,8 +2075,25 @@ void Misc::killMessage(GameEvent& event) noexcept
     if (const auto localUserId = localPlayer->getUserId(); event.getInt("attacker") != localUserId || event.getInt("userid") == localUserId)
         return;
 
+    srand(time(0));
+    auto randomMessage = rand() % 3;
+    std::string killMessage = "";
+
+    switch (randomMessage)
+    {
+    case 0:
+        killMessage = "Imagine getting 1'ed by BetterOsiris";
+        break;
+    case 1:
+        killMessage = "Better luck next time!";
+        break;
+    case 2:
+        killMessage = "('skull_emoji')";
+        break;
+    }
+
     std::string cmd = "say \"";
-    cmd += config->misc.killMessageString;
+    cmd += killMessage;
     cmd += '"';
     interfaces->engine->clientCmdUnrestricted(cmd.c_str());
 }

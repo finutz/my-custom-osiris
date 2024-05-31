@@ -171,6 +171,11 @@ struct Vector {
         return std::sqrt(x * x + y * y);
     }
 
+    float length2DSqr() const
+    {
+        return x * x + y * y;
+    }
+
     constexpr auto squareLength() const noexcept
     {
         return x * x + y * y + z * z;

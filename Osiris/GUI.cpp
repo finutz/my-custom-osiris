@@ -1925,10 +1925,6 @@ void GUI::renderMiscWindow() noexcept
     ImGui::PopID();
 
     ImGui::Checkbox("Kill message", &config->misc.killMessage);
-    ImGui::SameLine();
-    ImGui::PushItemWidth(120.0f);
-    ImGui::PushID(1);
-    ImGui::InputText("", &config->misc.killMessageString);
     ImGui::PopID();
     ImGui::Checkbox("Name stealer", &config->misc.nameStealer);
     ImGui::Checkbox("Fast plant", &config->misc.fastPlant);

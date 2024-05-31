@@ -30,6 +30,7 @@ static bool gotMatrixFakelag{ false };
 static bool gotMatrixReal{ false };
 static Vector viewangles{};
 static Vector correctAngle{};
+static Vector sentViewangles{};
 static int buildTransformsIndex = -1;
 static std::array<AnimationLayer, 13> staticLayers{};
 static std::array<AnimationLayer, 13> layers{};
@@ -72,6 +73,7 @@ void Animations::reset() noexcept
     poseParameters = {};
     sendPacketLayers = {};
 }
+
 
 void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
 {
@@ -126,6 +128,9 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     localPlayer->updateClientSideAnimation();
 
     std::memcpy(&layers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
+
+    if (sendPacket)
+        sentViewangles = cmd->viewangles; 
 
     if (sendPacket)
     {
@@ -260,6 +265,37 @@ void Animations::renderStart(FrameStage stage) noexcept
             continue;
         l = layers.at(i);
     }
+}
+
+bool BreakingLagCompensation(Entity* entity)
+{
+    for (int i = 1; i <= interfaces->engine->getMaxClients(); i++)
+    {
+        auto& records = players.at(i);
+
+        auto prev_org = records.origin;
+        auto skip_first = true;
+
+        for (auto& record : players)
+        {
+            if (skip_first)
+            {
+                skip_first = false;
+                continue;
+            }
+
+            auto delta = records.origin - prev_org;
+            if (delta.length2DSqr() > 4096.f)
+                return true;
+
+            if (records.simulationTime <= entity->simulationTime())
+                break;
+
+            prev_org = records.origin;
+        }
+    }
+
+    return false;
 }
 
 float getExtraTicks() noexcept
@@ -423,6 +459,8 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 player.velocity.y = 0.f;
             }
 
+            auto& prev_records = players.at(i);
+
             Resolver::runPreUpdate(player, entity);
 
             //Run animations
@@ -474,6 +512,8 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             updatingEntity = false;
 
             Resolver::runPostUpdate(player, entity);
+
+            auto time_difference = max(memory->globalVars->intervalPerTick, entity->simulationTime() - player.simulationTime);
 
             //Fix jump pose
             if (!(entity->flags() & 1) && !player.oldlayers.empty())// && entity->moveType() != MoveType::NOCLIP)
@@ -557,8 +597,9 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             record.mins = player.mins;
             record.maxs = player.maxs;
             std::copy(player.matrix.begin(), player.matrix.end(), record.matrix);
-
-            record.positions.push_back(record.matrix[8].origin());
+            for (auto bone : { 8, 4, 3, 7, 6, 5 }) {
+                record.positions.push_back(record.matrix[bone].origin());
+            }
 
             player.backtrackRecords.push_front(record);
 
@@ -673,9 +714,9 @@ int& Animations::buildTransformationsIndex() noexcept
 
 Vector* Animations::getCorrectAngle() noexcept
 {
-    return &correctAngle;
+    return &sentViewangles;
 }
-
+    
 Vector* Animations::getViewAngles() noexcept
 {
     return &viewangles;
