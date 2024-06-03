@@ -5,7 +5,9 @@
 Newest update:
 <p> - flick up (anti aim) </p>
 <p> - sway improvement (i think) (anti aim) </p>
-<p> - fixed local animfix </p>
+<p> - renamed AimbotFunctions to hitscan </p>
+<p> - small changes to hitscan (trying to fix low fps) </p>
+<p> - fixed local animfix (weapon not synced with the playermodel) </p>
 <p> - added the resolver to animfix ( wont work because resolver is unfinished ) </p>
 <p> - small improvements </p>
 <p> - small animfix improvements (enemy) </p>
