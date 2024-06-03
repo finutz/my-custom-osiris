@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Animations.h"
-
+#include "../Vector2D.hpp"
 #include "../SDK/GameEvent.h"
 #include "../SDK/Entity.h"
+
 
 namespace Resolver
 {
@@ -15,6 +16,9 @@ namespace Resolver
 
 	void setup_detect(Animations::Players& player, Entity* entity);
 
+	float calculateHitChance(Entity* entity, const Vector& angle) noexcept;
+	float calculateHitChance1(Entity* entity, const Vector& angle) noexcept;
+
 	void processMissedShots() noexcept;
 	void CmdGrabber(UserCmd* cmd1);
 	void saveRecord(int playerIndex, float playerSimulationTime) noexcept;
@@ -24,7 +28,17 @@ namespace Resolver
 	void runPostUpdate(Animations::Players player, Entity* entity) noexcept;
 
 	void detect_side(Entity* entity, int* side);
+	float resolve_shot(const Animations::Players& player, Entity* entity);
 
+	void detect_side(Entity* entity, int* side);
+
+	void setup_detect(Animations::Players& player, Entity* entity);
+
+	void anti_one_tap(int userid, Entity* entity, Vector shot);
+
+	void cmd_grabber(UserCmd* cmd);
+
+	void resolve_entity(const Animations::Players& player, Entity* entity);
 	void updateEventListeners(bool forceRemove = false) noexcept;
 
 	struct SnapShot

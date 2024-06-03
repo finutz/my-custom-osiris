@@ -25,6 +25,7 @@ namespace Helpers
     float clampCycle(float clycle) noexcept;
     float approach(float target, float value, float speed) noexcept;
     float approachValueSmooth(float target, float value, float fraction) noexcept;
+    void angleVectors(Vector angles, Vector* forward, Vector* right, Vector* up);
     float angleDiff(float destAngle, float srcAngle) noexcept;
     Vector approach(Vector target, Vector value, float speed) noexcept;
     float angleNormalize(float angle) noexcept;

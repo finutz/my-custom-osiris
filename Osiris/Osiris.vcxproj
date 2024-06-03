@@ -86,6 +86,7 @@
     <ClCompile Include="SDK\PredictionCopy.cpp" />
     <ClCompile Include="SDK\Utils.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Vector2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
@@ -226,6 +227,7 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Threading.h" />
+    <ClInclude Include="Vector2D.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

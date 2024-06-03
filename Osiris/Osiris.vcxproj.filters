@@ -260,6 +260,9 @@
     <ClCompile Include="SDK\BitBuffer.cpp">
       <Filter>SDK</Filter>
     </ClCompile>
+    <ClCompile Include="Vector2D.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GUI.h">
@@ -675,6 +678,9 @@
     </ClInclude>
     <ClInclude Include="SDK\ParticleCollection.h">
       <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2D.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
