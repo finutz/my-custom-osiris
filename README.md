@@ -2,17 +2,14 @@
 
 ## Use a VAC bypass or you WILL get banned
 
+Newest update:
+<p> - flick up (anti aim) </p>
+<p> - fixed local animfix </p>
+<p> - added the resolver to animfix ( wont work because resolver is unfinished ) </p>
+<p> - small improvements </p>
+<p> - small animfix improvements (enemy) </p>
+<p> - added Vector2D for resolver  </p>
+
 No linux support.
 
-Support this project at https://www.paypal.com/paypalme/notgoodusename
-
-Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
-
-This work is licensed under a
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
-
-[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
-
-[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
-[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
-[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
+# currently the resolver is not finished so if you have any sugestions feel free to create an issue or a pull request. 
