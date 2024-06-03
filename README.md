@@ -16,3 +16,4 @@ Newest update:
 No linux support.
 
 # currently the resolver is not finished so if you have any sugestions feel free to create an issue or a pull request. 
+![Untitled](https://github.com/finutz/my-custom-osiris/assets/84587349/228cc8d7-0d5c-4c9a-9fcf-11c0a48869d6)
