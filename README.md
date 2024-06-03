@@ -4,6 +4,7 @@
 
 Newest update:
 <p> - flick up (anti aim) </p>
+<p> - sway improvement (i think) (anti aim) </p>
 <p> - fixed local animfix </p>
 <p> - added the resolver to animfix ( wont work because resolver is unfinished ) </p>
 <p> - small improvements </p>
