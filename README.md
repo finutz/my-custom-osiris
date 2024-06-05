@@ -1,6 +1,6 @@
 # Osiris And Extra
 
-Newest update:
+Newest update (05.06.2024) :
 <p> - finished resolver </p>
 <p> - small animfix improvements </p>
 <p> - more flexible base </p>
