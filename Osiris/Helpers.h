@@ -18,6 +18,7 @@ namespace Helpers
     float simpleSpline(float value) noexcept;
     float simpleSplineRemapVal(float val, float A, float B, float C, float D) noexcept;
     float simpleSplineRemapValClamped(float val, float A, float B, float C, float D) noexcept;
+    void AngleVectors(Vector angles, Vector* forward, Vector* right, Vector* up);
     Vector lerp(float percent, Vector a, Vector b) noexcept;
     float lerp(float percent, float a, float b) noexcept;
     float bias(float x, float biasAmt) noexcept;
@@ -66,7 +67,7 @@ namespace Helpers
             start += utf8SeqLen(*start);
         return start;
     }
-
+    
     std::wstring toWideString(const std::string& str) noexcept;
     std::wstring toUpper(std::wstring str) noexcept;
 

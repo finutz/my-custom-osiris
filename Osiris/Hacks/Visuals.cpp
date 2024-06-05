@@ -607,7 +607,7 @@ void Visuals::hitEffect(GameEvent* event) noexcept
     if (config->visuals.hitEffect && localPlayer) {
         static float lastHitTime = 0.0f;
 
-        if (event && interfaces->engine->getPlayerForUserID(event->getInt("attacker")) == localPlayer->index()) {
+        if (event && interfaces->engine->getPlayerFromUserID(event->getInt("attacker")) == localPlayer->index()) {
             lastHitTime = memory->globalVars->realtime;
             return;
         }
@@ -1009,7 +1009,7 @@ void Visuals::footstepESP(GameEvent* event) noexcept
     if (!config->visuals.footsteps.footstepBeams.enabled)
         return;
 
-    const auto entity = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid")));
+    const auto entity = interfaces->entityList->getEntity(interfaces->engine->getPlayerFromUserID(event->getInt("userid")));
 
     if (!entity || !localPlayer.get() || entity == localPlayer.get() || entity->isDormant() || !entity->isAlive() || !entity->isOtherEnemy(localPlayer.get()))
         return;
@@ -1201,8 +1201,8 @@ void Visuals::drawHitboxMatrix(GameEvent* event) noexcept {
 
     if (!localPlayer) return;
 
-    const auto userID = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid")));
-    const auto attacker = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("attacker")));
+    const auto userID = interfaces->entityList->getEntity(interfaces->engine->getPlayerFromUserID(event->getInt("userid")));
+    const auto attacker = interfaces->entityList->getEntity(interfaces->engine->getPlayerFromUserID(event->getInt("attacker")));
 
     if (!userID) return;
 

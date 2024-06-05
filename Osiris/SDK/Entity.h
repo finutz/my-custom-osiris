@@ -664,7 +664,16 @@ public:
         interfaces->mdlCache->endLock();
     }
 
+    bool isBot()
+    {
+        if (PlayerInfo playerInfo; interfaces->engine->getPlayerInfo(index(), playerInfo))
+            return playerInfo.fakeplayer;
+        return false;
+    }
+
     NETVAR_OFFSET(collisionChangeTime, "CCSPlayer", "m_bIsScoped", -0x50, float)
+
+    NETVAR(team, "CBaseEntity", "m_iTeamNum", Team)
 
     NETVAR(didSmokeEffect, "CSmokeGrenadeProjectile", "m_bDidSmokeEffect", bool)
 
@@ -683,6 +692,7 @@ public:
     NETVAR(ownerEntity, "CBaseEntity", "m_hOwnerEntity", int)
     NETVAR(spotted, "CBaseEntity", "m_bSpotted", bool)
 
+    NETVAR_OFFSET(oldSimulationTime, "CBaseEntity", "m_flSimulationTime", 4, float)
     NETVAR(weapons, "CBaseCombatCharacter", "m_hMyWeapons", int[64])
     PNETVAR(wearables, "CBaseCombatCharacter", "m_hMyWearables", int)
 

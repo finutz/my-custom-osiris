@@ -2381,7 +2381,7 @@ void Misc::purchaseList(GameEvent* event) noexcept
     if (event) {
         switch (fnv::hashRuntime(event->getName())) {
         case fnv::hash("item_purchase"): {
-            const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(event->getInt("userid")));
+            const auto player = interfaces->entityList->getEntity(interfaces->engine->getPlayerFromUserID(event->getInt("userid")));
 
             if (player && localPlayer && memory->isOtherEnemy(player, localPlayer.get())) {
                 if (const auto definition = memory->itemSystem()->getItemSchema()->getItemDefinitionByName(event->getString("weapon"))) {
@@ -2619,7 +2619,7 @@ void Misc::chatRevealer(GameEvent& event, GameEvent* events) noexcept
     if (!localPlayer)
         return;
 
-    const auto entity = interfaces->entityList->getEntity(interfaces->engine->getPlayerForUserID(events->getInt("userid")));
+    const auto entity = interfaces->entityList->getEntity(interfaces->engine->getPlayerFromUserID(events->getInt("userid")));
     if (!entity)
         return;
 
