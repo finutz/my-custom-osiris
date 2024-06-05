@@ -16,7 +16,7 @@ No linux support.
 <p> - custom clantags </p>
 <p> - more and better kill messages </p>
 
-### Older updates
+### Older updates :
 
 03.06.2024 update:
 <p> - flick up (anti aim) </p>
