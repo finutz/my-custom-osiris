@@ -22,7 +22,8 @@ int maxThreadNum = (std::thread::hardware_concurrency());
 
 #include <vector>
 #include <future>
-#include <math.h> 
+#include <algorithm>
+#include <cmath>
 
 #define TICKS_TO_TIME(t) (memory->globalVars->m_intervalpertick * (t))
 
@@ -35,6 +36,21 @@ Vector AimbotFunction::calculateRelativeAngle(const Vector& source, const Vector
     return ((destination - source).toAngle() - viewAngles).normalize();
 }
 
+
+inline void VectorTransform(const Vector& in1, const matrix3x4& in2, Vector& out) {
+    out.x = in1.x * in2[0][0] + in1.y * in2[0][1] + in1.z * in2[0][2] + in2[0][3];
+    out.y = in1.x * in2[1][0] + in1.y * in2[1][1] + in1.z * in2[1][2] + in2[1][3];
+    out.z = in1.x * in2[2][0] + in1.y * in2[2][1] + in1.z * in2[2][2] + in2[2][3];
+}//for multipoint
+
+/// idk what i am doing
+
+inline void addPoints(std::vector<Vector>& vecArray, const Vector& base, const Vector& right, const Vector& up, float radius) {
+    vecArray.emplace_back(base + up * radius);
+    vecArray.emplace_back(base + right * radius);
+    vecArray.emplace_back(base - right * radius);
+    vecArray.emplace_back(base - up * radius);
+}//for multipoint
 
 static bool traceToExit(const Trace& enterTrace, const Vector& start, const Vector& direction, Vector& end, Trace& exitTrace, float range = 90.f, float step = 4.0f)
 {
@@ -512,62 +528,34 @@ Vector AimbotFunction::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES],
 }
 
 
-std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint)
-{
-    auto VectorTransformWrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
-        {
-            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
-                {
-                    auto dotProducts = [](const float* v1, const float* v2)
-                        {
-                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-                        };
-                    out[0] = dotProducts(in1, in2[0]) + in2[0][3];
-                    out[1] = dotProducts(in1, in2[1]) + in2[1][3];
-                    out[2] = dotProducts(in1, in2[2]) + in2[2][3];
-                };
-            VectorTransform(&in1.x, in2, &out.x);
-        };
-
+std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint) {
     Vector min, max, center;
-    VectorTransformWrapper(hitbox->bbMin, matrix[hitbox->bone], min);
-    VectorTransformWrapper(hitbox->bbMax, matrix[hitbox->bone], max);
+    VectorTransform(hitbox->bbMin, matrix[hitbox->bone], min);
+    VectorTransform(hitbox->bbMax, matrix[hitbox->bone], max);
     center = (min + max) * 0.5f;
 
     std::vector<Vector> vecArray;
+    vecArray.reserve(5); // Reserve space for the worst-case scenario (4 points + center)
 
-    if (_multiPoint <= 0)
-    {
+    if (_multiPoint <= 0) {
         vecArray.emplace_back(center);
         return vecArray;
     }
+
     vecArray.emplace_back(center);
 
     Vector currentAngles = AimbotFunction::calculateRelativeAngle(center, localEyePos, Vector{});
+    Vector forward = Vector::fromAngle(currentAngles);
 
-    Vector forward;
-    Vector::fromAngle(currentAngles, &forward);
-
-    Vector right = forward.cross(Vector{ 0, 0, 1 });
-    Vector left = Vector{ -right.x, -right.y, right.z };
-
-    Vector top = Vector{ 0, 0, 1 };
-    Vector bottom = Vector{ 0, 0, -1 };
+    Vector right = forward.cross(Vector{ 0, 0, 1 }).normalized();
+    Vector up = Vector{ 0, 0, 1 };
 
     float multiPointFactor = std::clamp(_multiPoint * 0.01f, 0.0f, 1.0f);
+    float radius = hitbox->capsuleRadius * multiPointFactor;
 
-    auto addPoints = [&](Vector base, float radius)
-        {
-            vecArray.emplace_back(base + top * radius);
-            vecArray.emplace_back(base + right * radius);
-            vecArray.emplace_back(base + left * radius);
-            vecArray.emplace_back(base + bottom * radius);
-        };
-
-    switch (_hitbox)
-    {
+    switch (_hitbox) {
     case Hitboxes::Head:
-        addPoints(center, hitbox->capsuleRadius * multiPointFactor);
+        addPoints(vecArray, center, right, up, radius);
         break;
     case Hitboxes::Neck:
     case Hitboxes::Belly:
@@ -575,32 +563,23 @@ std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 m
     case Hitboxes::Thorax:
     case Hitboxes::UpperChest:
     case Hitboxes::LowerChest:
-        for (auto i = 0; i < 4; ++i)
-        {
-            vecArray.emplace_back(center);
-        }
-
-        vecArray[1] += right * (hitbox->capsuleRadius * multiPointFactor);
-        vecArray[2] += left * (hitbox->capsuleRadius * multiPointFactor);
-        vecArray[3] += forward * (hitbox->capsuleRadius * multiPointFactor);
-        vecArray[4] -= forward * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray.emplace_back(center + right * radius);
+        vecArray.emplace_back(center - right * radius);
+        vecArray.emplace_back(center + forward * radius);
+        vecArray.emplace_back(center - forward * radius);
         break;
     case Hitboxes::LeftFoot:
     case Hitboxes::RightFoot:
     case Hitboxes::LeftHand:
     case Hitboxes::RightHand:
-        addPoints(center, hitbox->capsuleRadius * (multiPointFactor * 0.5f));
+        addPoints(vecArray, center, right, up, radius * 0.5f);
         break;
     default:
-        for (auto i = 0; i < 3; ++i)
-        {
-            vecArray.emplace_back(center);
-        }
-
-        vecArray[1] += right * (hitbox->capsuleRadius * multiPointFactor);
-        vecArray[2] += left * (hitbox->capsuleRadius * multiPointFactor);
+        vecArray.emplace_back(center + right * radius);
+        vecArray.emplace_back(center - right * radius);
         break;
     }
+
     return vecArray;
 }
 

@@ -15,6 +15,8 @@ namespace Animations
 {
 	void init() noexcept;
 
+	static Vector sentViewangles{};
+
 	void reset() noexcept;
 
 	void update(UserCmd*, bool& sendPacket) noexcept;

@@ -17,7 +17,9 @@ struct Vector {
     {
         return !notNull();
     }
+   
     
+
     constexpr float operator[](int i) const noexcept
     {
         return ((float*)this)[i];
@@ -338,6 +340,8 @@ struct Vector {
     {
         return Vector{ 0.0f, -1.0f, 0.0f };
     }
+
+
 
     float x, y, z;
 };

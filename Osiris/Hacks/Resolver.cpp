@@ -136,9 +136,16 @@ float get_backward_side(Entity* entity) {
 float get_angle(Entity* entity) {
     return Helpers::angleNormalize(entity->eyeAngles().y);
 }
+
 float get_forward_yaw(Entity* entity) {
     return Helpers::angleNormalize(get_backward_side(entity) - 180.f);
 }
+
+float get_foword_yaw(Entity* entity) {
+    return Helpers::angleNormalize(get_backward_side(entity) - 180.f);
+}
+
+
 
 Vector calcAngle(Vector source, Vector entityPos) {
     Vector delta = {};
@@ -282,9 +289,11 @@ void Resolver::detect_side(Entity* entity, int* side) {
     /* left engine tracers */
     interfaces->engineTrace->traceRay(Ray(src_3d - right * 35, dst_3d - right * 35), MASK_SHOT, { entity }, tr);
     float left_two = (tr.endpos - tr.startpos).length();
+
     /* fix side */
     if (left_two > right_two) {
         *side = -1;
+        //Body should be right
     }
     else if (right_two > left_two) {
         *side = 1;
@@ -328,14 +337,12 @@ bool isSlowWalking(Entity* entity)
         else
             tick_counter[entity->index()] = 0;
 
-        while (tick_counter[entity->index()] > (1 / memory->globalVars->intervalPerTick * fabsf(0.1f)))//should give use 100ms in ticks if their speed stays the same for that long they are definetely up to something..
+        while (tick_counter[entity->index()] > (1 / memory->globalVars->intervalPerTick * fabsf(0.1f)))
             return true;
     }
 
-
     return false;
 }
-
 int GetChokedPackets(Entity* entity) {
     int last_ticks[65]{};
     auto ticks = timeToTicks(entity->simulationTime() - entity->oldSimulationTime());
