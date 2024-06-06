@@ -111,7 +111,6 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     viewangles = cmd->viewangles;
     sendPacket = _sendPacket;
     localPlayer->getAnimstate()->buttons = cmd->buttons;
-
     updatingLocal = true;
 
     // allow animations to be animated in the same frame
@@ -130,28 +129,26 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     std::memcpy(&layers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
 
     if (sendPacket)
-        sentViewangles = cmd->viewangles; 
-
-    if (sendPacket)
     {
         std::memcpy(&sendPacketLayers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         footYaw = localPlayer->getAnimstate()->footYaw;
         poseParameters = localPlayer->poseParameters();
         gotMatrixReal = localPlayer->setupBones(realmatrix.data(), localPlayer->getBoneCache().size, 0x7FF00, memory->globalVars->currenttime);
-        const auto origin = localPlayer->getRenderOrigin();
         if (gotMatrixReal)
         {
             for (auto& i : realmatrix)
             {
-                i[0][3] -= origin.x;
-                i[1][3] -= origin.y;
-                i[2][3] -= origin.z;
+                i[0][3] -= localPlayer->getRenderOrigin().x;
+                i[1][3] -= localPlayer->getRenderOrigin().y;
+                i[2][3] -= localPlayer->getRenderOrigin().z;
             }
         }
         localAngle = cmd->viewangles;
     }
     updatingLocal = false;
 }
+
+
 
 void Animations::fake() noexcept
 {

@@ -16,15 +16,23 @@
 #include "../SDK/WeaponData.h"
 #include "../SDK/ModelInfo.h"
 
+#include <omp.h>
+#include <thread>
+int maxThreadNum = (std::thread::hardware_concurrency());
+
 #include <vector>
 #include <future>
-#include <math.h> ///69 mala 
+#include <math.h> 
+
+#define TICKS_TO_TIME(t) (memory->globalVars->m_intervalpertick * (t))
+
+#define TICK_INTERVAL            ( memory->globalVars->currenttime )
+
+#define TIME_TO_TICKS( dt )        ( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
 
 Vector AimbotFunction::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
 {
-    Vector delta = destination - source;
-    Vector angle = delta.toAngle();
-    return (angle - viewAngles).normalize();
+    return ((destination - source).toAngle() - viewAngles).normalize();
 }
 
 
@@ -111,44 +119,50 @@ static float handleBulletPenetration(SurfaceData* enterSurfaceData, const Trace&
 
 void AimbotFunction::calculateArmorDamage(float armorRatio, int armorValue, bool hasHeavyArmor, float& damage) noexcept
 {
+    auto armorScale = 1.0f;
+    auto armorBonusRatio = 0.5f;
+
     if (hasHeavyArmor)
     {
         armorRatio *= 0.2f;
-        float newDamage = damage * armorRatio;
-        float estimatedDamage = (damage - newDamage) * 0.25f * 0.33f;
-
-        if (estimatedDamage > armorValue)
-            newDamage = damage - (armorValue / 0.33f);
-
-        damage = newDamage;
+        armorBonusRatio = 0.33f;
+        armorScale = 0.25f;
     }
-    else
-    {
-        float newDamage = damage * armorRatio;
-        float estimatedDamage = (damage - newDamage) * 0.5f;
 
-        if (estimatedDamage > armorValue)
-            newDamage = damage - (armorValue / 0.5f);
+    auto newDamage = damage * armorRatio;
+    const auto estiminated_damage = (damage - damage * armorRatio) * armorScale * armorBonusRatio;
 
-        damage = newDamage;
-    }
+    if (estiminated_damage > armorValue)
+        newDamage = damage - armorValue / armorBonusRatio;
+
+    damage = newDamage;
 }
 
+bool getSafePoints(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioHitboxSet* set, Vector start_position, Vector end_position, int hitbox) noexcept
+{
+    if (AimbotFunction::hitboxIntersection(matrix, hitbox, set, start_position, end_position))
+        return true;
+
+    return false;
+}
 
 bool AimbotFunction::canScan(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
     if (!localPlayer)
         return false;
 
-    float damage = static_cast<float>(weaponData->damage);
-    Vector start = localPlayer->getEyePosition();
-    Vector direction = (destination - start).normalized();
-    float maxDistance = (destination - start).length();
-    float currentDistance = 0.0f;
+
+    float damage{ static_cast<float>(weaponData->damage) };
+
+    Vector start{ localPlayer->getEyePosition() };
+    Vector direction{ destination - start };
+    float maxDistance{ direction.length() };
+    float curDistance{ 0.0f };
+    direction /= maxDistance;
+
     int hitsLeft = 4;
 
-    while (damage >= 1.0f && hitsLeft > 0)
-    {
+    while (damage >= 1.0f && hitsLeft) {
         Trace trace;
         interfaces->engineTrace->traceRay({ start, destination }, 0x4600400B, localPlayer.get(), trace);
 
@@ -158,22 +172,19 @@ bool AimbotFunction::canScan(Entity* entity, const Vector& destination, const We
         if (trace.fraction == 1.0f)
             break;
 
-        currentDistance += trace.fraction * (maxDistance - currentDistance);
-        damage *= std::pow(weaponData->rangeModifier, currentDistance / 500.0f);
+        curDistance += trace.fraction * (maxDistance - curDistance);
+        damage *= std::pow(weaponData->rangeModifier, curDistance / 500.0f);
 
-        if (trace.entity == entity && trace.hitgroup > HitGroup::Generic && trace.hitgroup <= HitGroup::RightLeg)
-        {
+        if (trace.entity == entity && trace.hitgroup > HitGroup::Generic && trace.hitgroup <= HitGroup::RightLeg) {
             damage *= HitGroup::getDamageMultiplier(trace.hitgroup, weaponData, trace.entity->hasHeavyArmor(), static_cast<int>(trace.entity->getTeamNumber()));
 
-            if (HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
-            {
-                float armorRatio = weaponData->armorRatio / 2.0f;
+            if (float armorRatio{ weaponData->armorRatio / 2.0f }; HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
                 calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
-            }
 
-            return damage >= minDamage;
+            if (damage >= minDamage)
+                return damage;
+            return 0.f;
         }
-
         const auto surfaceData = interfaces->physicsSurfaceProps->getSurfaceData(trace.surface.surfaceProps);
 
         if (surfaceData->penetrationmodifier < 0.1f)
@@ -184,6 +195,7 @@ bool AimbotFunction::canScan(Entity* entity, const Vector& destination, const We
     }
     return false;
 }
+
 
 float AimbotFunction::getScanDamage(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
@@ -325,7 +337,9 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
     const float mi[3] = { min.x, min.y, min.z };
     const float ma[3] = { max.x, max.y, max.z };
 
-    for (auto i = 0; i < 6; i++) {
+    bool result = start_solid || (t1 < t2 && t1 >= 0.0f);
+#pragma omp parallel for num_threads(maxThreadNum)
+    for (auto i = 0; i < 6; ++i) {
         if (i >= 3) {
             const auto j = i - 3;
 
@@ -338,7 +352,7 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
 
         if (d1 > 0.0f && d2 > 0.0f)
-            return false;
+            result = false;
 
         if (d1 <= 0.0f && d2 <= 0.0f)
             continue;
@@ -362,7 +376,7 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
     }
 
-    return start_solid || (t1 < t2&& t1 >= 0.0f);
+    return result;
 }
 
 void inline sinCos(float radians, float* sine, float* cosine)
