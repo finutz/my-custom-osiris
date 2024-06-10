@@ -10,7 +10,7 @@ struct SurfaceData;
 struct StudioBbox;
 struct StudioHitboxSet;
 
-namespace AimbotFunction
+namespace hitscan
 {
     Vector calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept;
 

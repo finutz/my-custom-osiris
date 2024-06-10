@@ -1094,7 +1094,7 @@ void Visuals::bulletTracer(GameEvent& event) noexcept
         }
 
         const auto bulletImpact = Vector{ event.getFloat("x"),  event.getFloat("y"),  event.getFloat("z") };
-        const auto angle = AimbotFunction::calculateRelativeAngle(shotRecord.front().eyePosition, bulletImpact, Vector{ });
+        const auto angle = hitscan::calculateRelativeAngle(shotRecord.front().eyePosition, bulletImpact, Vector{ });
         const auto end = bulletImpact + Vector::fromAngle(angle) * 2000.f;
 
         BeamInfo beamInfo;
@@ -1223,7 +1223,7 @@ void Visuals::drawHitboxMatrix(GameEvent* event) noexcept {
             if (Backtrack::valid(records->at(i).simulationTime))
             {
                 for (auto position : records->at(i).positions) {
-                    auto angle = AimbotFunction::calculateRelativeAngle(localPlayer->getEyePosition(), position, interfaces->engine->getViewAngles());
+                    auto angle = hitscan::calculateRelativeAngle(localPlayer->getEyePosition(), position, interfaces->engine->getViewAngles());
                     auto fov = std::hypotf(angle.x, angle.y);
                     if (fov < bestFov) {
                         bestFov = fov;
