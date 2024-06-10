@@ -338,7 +338,8 @@ public:
         int forceRelayCluster{ 0 };
         bool autoStrafe{ false };
         bool bunnyHop{ false };
-        bool customClanTag{ false };
+        bool clantag{ false };
+        bool clantagmode{ 0 };
         bool customName{ false };
         bool clocktag{ false };
         bool animatedClanTag{ false };

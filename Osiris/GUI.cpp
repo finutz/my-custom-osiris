@@ -1905,15 +1905,18 @@ void GUI::renderMiscWindow() noexcept
     ImGui::NextColumn();
     ImGui::Checkbox("Disable HUD blur", &config->misc.disablePanoramablur);
     ImGui::Checkbox("Animated clan tag", &config->misc.animatedClanTag);
-    ImGui::Checkbox("Clock tag", &config->misc.clocktag);
-    ImGui::Checkbox("Custom clantag", &config->misc.customClanTag);
+  //ImGui::Checkbox("Clock tag", &config->misc.clocktag);
+    ImGui::Checkbox("Clantag", &config->misc.clantag);
+   /*
     ImGui::SameLine();
     ImGui::PushItemWidth(120.0f);
     ImGui::PushID(0);
-
+    */
+    /*
     if (ImGui::InputText("", config->misc.clanTag, sizeof(config->misc.clanTag)))
         Misc::updateClanTag(true);
     ImGui::PopID();
+    */
 
     ImGui::Checkbox("Custom name", &config->misc.customName);
     ImGui::SameLine();
@@ -2609,7 +2612,7 @@ void GUI::renderGuiStyle() noexcept {
                     ImGui::BeginChild("##Text", ImVec2{ 700, 20 }, false); // Slightly increased width
                     {
                         ImGui::SetCursorPos(ImVec2{ 2, 2 });
-                        ImGui::Text("Better Osiris Made In https://github.com/notgoodusename/OsirisAndExtra");
+                        ImGui::Text("Better Osiris Made In https://github.com/finutz/my-custom-osiris");
                     }
                     ImGui::EndChild();
                 }

@@ -1,7 +1,4 @@
-#include <mutex>
-#include <numeric>
-#include <sstream>
-#include <string>
+﻿
 
 #include "../imgui/imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -14,9 +11,13 @@
 #include "../GUI.h"
 #include "../Helpers.h"
 #include "../GameData.h"
+#include "Tickbase.h"
+#include "AntiAim.h"
 
+#include "../Hooks.h"
 #include "EnginePrediction.h"
 #include "Misc.h"
+#include "../SDK/ViewRenderBeams.h"
 
 #include "../SDK/Client.h"
 #include "../SDK/ClientMode.h"
@@ -27,7 +28,9 @@
 #include "../SDK/GlobalVars.h"
 #include "../SDK/Input.h"
 #include "../SDK/ItemSchema.h"
-#include "../SDK/Localize.h"
+#include "../Localize.h"
+#include "../SDK/MaterialSystem.h"
+#include "../SDK/Material.h"
 #include "../SDK/LocalPlayer.h"
 #include "../SDK/NetworkChannel.h"
 #include "../SDK/Panorama.h"
@@ -38,8 +41,18 @@
 #include "../SDK/ViewSetup.h"
 #include "../SDK/WeaponData.h"
 #include "../SDK/WeaponSystem.h"
-
+#include "../SDK/Steam.h"
 #include "../imguiCustom.h"
+#include <TlHelp32.h>
+#include  <mutex>
+#include  <numeric>
+#include  <sstream>
+#include  <string>
+
+#include "Visuals.h"
+
+UserCmd* cmd1;
+int goofy;
 
 bool Misc::isInChat() noexcept
 {
@@ -1373,53 +1386,65 @@ void Misc::inverseRagdollGravity() noexcept
 
 void Misc::updateClanTag(bool tagChanged) noexcept
 {
-    static std::string clanTag;
-
-    static auto clanId = interfaces->cvar->findVar("cl_clanid");
     static bool wasEnabled = false;
-
-    if (wasEnabled && !config->misc.clocktag && !config->misc.customClanTag)
+    static auto clanId = interfaces->cvar->findVar("cl_clanid");
+    if (!config->misc.clantag && wasEnabled)
     {
         interfaces->engine->clientCmdUnrestricted(("cl_clanid " + std::to_string(clanId->getInt())).c_str());
         wasEnabled = false;
+    }
+    if (!config->misc.clantag)
+    {
         return;
     }
 
-    wasEnabled = config->misc.clocktag || config->misc.customClanTag;
+    static std::string clanTag;
 
-    if (tagChanged) {
-        clanTag = config->misc.clanTag;
-        if (!clanTag.empty() && clanTag.front() != ' ' && clanTag.back() != ' ')
-            clanTag.push_back(' ');
-        return;
-    }
-    
-    static auto lastTime = 0.0f;
-
-    if (config->misc.clocktag) {
-        if (memory->globalVars->realtime - lastTime < 1.0f)
-            return;
-
-        const auto time = std::time(nullptr);
-        const auto localTime = std::localtime(&time);
-        char s[11];
-        s[0] = '\0';
-        snprintf(s, sizeof(s), "[%02d:%02d:%02d]", localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
-        lastTime = memory->globalVars->realtime;
-        memory->setClanTag(s, s);
-    } else if (config->misc.customClanTag) {
-        if (memory->globalVars->realtime - lastTime < 0.6f)
-            return;
-
-        if (config->misc.animatedClanTag && !clanTag.empty()) {
-            const auto offset = Helpers::utf8SeqLen(clanTag[0]);
-            if (offset != -1 && static_cast<std::size_t>(offset) <= clanTag.length())
-                std::rotate(clanTag.begin(), clanTag.begin() + offset, clanTag.end());
+    static int lastTime = 0;
+    int time = memory->globalVars->currenttime * M_PI;
+    if (config->misc.clantag)
+    {
+        wasEnabled = true;
+        if (time != lastTime)
+        {
+            switch (time % 30)
+            {
+            case 0: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 1: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 2: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 3: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 4: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 5: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 6: { memory->setClanTag(" Better Osiris ", " Better Osiris "); break; }
+            case 7: { memory->setClanTag(" Better Osiri ", " Better Osiri "); break; }
+            case 8: { memory->setClanTag(" Better Osir ", " Better Osir "); break; }
+            case 9: { memory->setClanTag(" Better Osi ", " Better Osi "); break; }
+            case 10: { memory->setClanTag(" Better Os ", " Better Os "); break; }
+            case 11: { memory->setClanTag(" Better O ", " Better O "); break; }
+            case 12: { memory->setClanTag(" Better ", " Better "); break; }
+            case 13: { memory->setClanTag(" Bette ", " Bette "); break; }
+            case 14: { memory->setClanTag(" Bett ", " Bett "); break; }
+            case 15: { memory->setClanTag(" Bet ", " Bet "); break; }
+            case 16: { memory->setClanTag(" Be ", " Be "); break; }
+            case 17: { memory->setClanTag(" B ", " B "); break; }
+            case 18: { memory->setClanTag(" ", " "); break; }
+            case 19: { memory->setClanTag(" B ", " B "); break; }
+            case 20: { memory->setClanTag(" Be ", " Be "); break; }
+            case 21: { memory->setClanTag(" Bet ", " Bet "); break; }
+            case 22: { memory->setClanTag(" Bett ", " Bett "); break; }
+            case 23: { memory->setClanTag(" Bette ", " Bette "); break; }
+            case 24: { memory->setClanTag(" Better ", " Better "); break; }
+            case 25: { memory->setClanTag(" Better O", " Better O"); break; }
+            case 26: { memory->setClanTag(" Better Os ", " Better Os "); break; }
+            case 27: { memory->setClanTag(" Better Osi ", " Better Osi "); break; }
+            case 28: { memory->setClanTag(" Better Osir ", " Better Osir "); break; }
+            case 29: { memory->setClanTag(" Better Osiri ", " Better Osiri "); break; }
+            }
         }
-        lastTime = memory->globalVars->realtime;
-        memory->setClanTag(clanTag.c_str(), clanTag.c_str());
+        lastTime = time;
     }
 }
+
 
 const bool anyActiveKeybinds() noexcept
 {
@@ -2076,7 +2101,7 @@ void Misc::killMessage(GameEvent& event) noexcept
         return;
 
     srand(time(0));
-    auto randomMessage = rand() % 3;
+    auto randomMessage = rand() % 4;
     std::string killMessage = "";
 
     switch (randomMessage)
@@ -2088,7 +2113,10 @@ void Misc::killMessage(GameEvent& event) noexcept
         killMessage = "Better luck next time!";
         break;
     case 2:
-        killMessage = "('skull_emoji')";
+        killMessage = "way too ez for BetterOsiris";
+        break;
+    case 3:
+        killMessage = "● DEAD jannes™‎ : rostogolimias pulan pilafu mati";
         break;
     }
 

@@ -14,7 +14,6 @@ namespace Resolver
 	float resolve_shot(const Animations::Players& player, Entity* entity);
 
 	void setup_detect(Animations::Players& player, Entity* entity);
-
 	void processMissedShots() noexcept;
 	void CmdGrabber(UserCmd* cmd1);
 	void saveRecord(int playerIndex, float playerSimulationTime) noexcept;

@@ -670,7 +670,7 @@ static void from_json(const json& j, Config::Misc& m)
     read(j, "Force relay", m.forceRelayCluster);
     read(j, "Auto strafe", m.autoStrafe);
     read(j, "Bunny hop", m.bunnyHop);
-    read(j, "Custom clan tag", m.customClanTag);
+    read(j, "Clan Tag", m.clantag);
     read(j, "Clock tag", m.clocktag);
     read(j, "Clan tag", m.clanTag, sizeof(m.clanTag));
     read(j, "Animated clan tag", m.animatedClanTag);
@@ -1332,7 +1332,7 @@ static void to_json(json& j, const Config::Misc& o)
     WRITE("Force relay", forceRelayCluster);
     WRITE("Auto strafe", autoStrafe);
     WRITE("Bunny hop", bunnyHop);
-    WRITE("Custom clan tag", customClanTag);
+    WRITE("Clan Tag", clantag);
     WRITE("Clock tag", clocktag);
 
     if (o.clanTag[0])
@@ -1420,10 +1420,7 @@ static void to_json(json& j, const Config::Misc& o)
     WRITE("Logger", logger);
     WRITE("Logger options", loggerOptions);
 
-    WRITE("Custom name", customClanTag);
-
-    if (o.clanTag[0])
-        j["Name"] = o.name;
+    
 }
 
 static void to_json(json& j, const Config::Visuals& o)

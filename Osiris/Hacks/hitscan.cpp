@@ -127,6 +127,7 @@ bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInf
 {
     if (!localPlayer)
         return false;
+        
 
     float damage{ static_cast<float>(weaponData->damage) };
 
@@ -171,20 +172,17 @@ bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInf
     }
     return false;
 }
-
 float hitscan::getScanDamage(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
     if (!localPlayer)
         return 0.f;
 
-    float damage{ static_cast<float>(weaponData->damage) };
-
-    Vector start{ localPlayer->getEyePosition() };
-    Vector direction{ destination - start };
-    float maxDistance{ direction.length() };
-    float curDistance{ 0.0f };
+    float damage = static_cast<float>(weaponData->damage);
+    Vector start = localPlayer->getEyePosition();
+    Vector direction = destination - start;
+    float maxDistance = direction.length();
     direction /= maxDistance;
-
+    float curDistance = 0.0f;
     int hitsLeft = 4;
 
     while (damage >= 1.0f && hitsLeft) {
@@ -203,13 +201,14 @@ float hitscan::getScanDamage(Entity* entity, const Vector& destination, const We
         if (trace.entity == entity && trace.hitgroup > HitGroup::Generic && trace.hitgroup <= HitGroup::RightLeg) {
             damage *= HitGroup::getDamageMultiplier(trace.hitgroup, weaponData, trace.entity->hasHeavyArmor(), static_cast<int>(trace.entity->getTeamNumber()));
 
-            if (float armorRatio{ weaponData->armorRatio / 2.0f }; HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
+            if (float armorRatio = weaponData->armorRatio / 2.0f; HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
                 calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
 
             if (damage >= minDamage)
                 return damage;
             return 0.f;
         }
+
         const auto surfaceData = interfaces->physicsSurfaceProps->getSurfaceData(trace.surface.surfaceProps);
 
         if (surfaceData->penetrationmodifier < 0.1f)
@@ -220,6 +219,7 @@ float hitscan::getScanDamage(Entity* entity, const Vector& destination, const We
     }
     return 0.f;
 }
+
 
 float segmentToSegment(const Vector& s1, const Vector& s2, const Vector& k1, const Vector& k2) noexcept
 {
