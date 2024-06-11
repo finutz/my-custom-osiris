@@ -16,6 +16,9 @@
 #include "../SDK/WeaponData.h"
 #include "../SDK/ModelInfo.h"
 
+#include <omp.h>
+#include <thread>
+
 Vector hitscan::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
 {
     return ((destination - source).toAngle() - viewAngles).normalize();
@@ -127,7 +130,6 @@ bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInf
 {
     if (!localPlayer)
         return false;
-        
 
     float damage{ static_cast<float>(weaponData->damage) };
 
@@ -172,17 +174,20 @@ bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInf
     }
     return false;
 }
+
 float hitscan::getScanDamage(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
     if (!localPlayer)
         return 0.f;
 
-    float damage = static_cast<float>(weaponData->damage);
-    Vector start = localPlayer->getEyePosition();
-    Vector direction = destination - start;
-    float maxDistance = direction.length();
+    float damage{ static_cast<float>(weaponData->damage) };
+
+    Vector start{ localPlayer->getEyePosition() };
+    Vector direction{ destination - start };
+    float maxDistance{ direction.length() };
+    float curDistance{ 0.0f };
     direction /= maxDistance;
-    float curDistance = 0.0f;
+
     int hitsLeft = 4;
 
     while (damage >= 1.0f && hitsLeft) {
@@ -201,14 +206,13 @@ float hitscan::getScanDamage(Entity* entity, const Vector& destination, const We
         if (trace.entity == entity && trace.hitgroup > HitGroup::Generic && trace.hitgroup <= HitGroup::RightLeg) {
             damage *= HitGroup::getDamageMultiplier(trace.hitgroup, weaponData, trace.entity->hasHeavyArmor(), static_cast<int>(trace.entity->getTeamNumber()));
 
-            if (float armorRatio = weaponData->armorRatio / 2.0f; HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
+            if (float armorRatio{ weaponData->armorRatio / 2.0f }; HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
                 calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
 
             if (damage >= minDamage)
                 return damage;
             return 0.f;
         }
-
         const auto surfaceData = interfaces->physicsSurfaceProps->getSurfaceData(trace.surface.surfaceProps);
 
         if (surfaceData->penetrationmodifier < 0.1f)
@@ -219,7 +223,6 @@ float hitscan::getScanDamage(Entity* entity, const Vector& destination, const We
     }
     return 0.f;
 }
-
 
 float segmentToSegment(const Vector& s1, const Vector& s2, const Vector& k1, const Vector& k2) noexcept
 {
@@ -485,106 +488,119 @@ Vector hitscan::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES], Studio
 }
 
 
-std::vector<Vector> hitscan::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint) {
-    auto VectorTransform = [](const Vector& in1, const matrix3x4& in2, Vector& out) {
-        out.x = in1.dotProduct(in2[0]) + in2[0][3];
-        out.y = in1.dotProduct(in2[1]) + in2[1][3];
-        out.z = in1.dotProduct(in2[2]) + in2[2][3];
+std::vector<Vector> hitscan::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint)
+{
+    auto VectorTransformWrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
+        {
+            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
+                {
+                    auto dotProducts = [](const float* v1, const float* v2)
+                        {
+                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+                        };
+                    out[0] = dotProducts(in1, in2[0]) + in2[0][3];
+                    out[1] = dotProducts(in1, in2[1]) + in2[1][3];
+                    out[2] = dotProducts(in1, in2[2]) + in2[2][3];
+                };
+            VectorTransform(&in1.x, in2, &out.x);
         };
 
     Vector min, max, center;
-    VectorTransform(hitbox->bbMin, matrix[hitbox->bone], min);
-    VectorTransform(hitbox->bbMax, matrix[hitbox->bone], max);
+    VectorTransformWrapper(hitbox->bbMin, matrix[hitbox->bone], min);
+    VectorTransformWrapper(hitbox->bbMax, matrix[hitbox->bone], max);
     center = (min + max) * 0.5f;
 
     std::vector<Vector> vecArray;
-    vecArray.emplace_back(center);
 
-    if (_multiPoint <= 0) {
+    if (_multiPoint <= 0)
+    {
+        vecArray.emplace_back(center);
         return vecArray;
     }
+    vecArray.emplace_back(center);
 
     Vector currentAngles = hitscan::calculateRelativeAngle(center, localEyePos, Vector{});
+
     Vector forward;
     Vector::fromAngle(currentAngles, &forward);
 
     Vector right = forward.cross(Vector{ 0, 0, 1 });
     Vector left = Vector{ -right.x, -right.y, right.z };
+
     Vector top = Vector{ 0, 0, 1 };
     Vector bottom = Vector{ 0, 0, -1 };
 
-    float multiPointScale = std::clamp(static_cast<float>(_multiPoint) / 100.0f, 0.0f, 1.0f);
-    float radius = hitbox->capsuleRadius * multiPointScale;
+    float multiPoint = (min(_multiPoint, 95)) * 0.01f;
 
-    switch (_hitbox) {
+    switch (_hitbox)
+    {
     case Hitboxes::Head:
-        vecArray.emplace_back(center + top * radius);
-        vecArray.emplace_back(center + right * radius);
-        vecArray.emplace_back(center + left * radius);
-        vecArray.emplace_back(center + bottom * radius);
-        vecArray.emplace_back(center + forward * radius);
+        for (auto i = 0; i < 4; ++i)
+            vecArray.emplace_back(center);
+
+        vecArray[1] += top * (hitbox->capsuleRadius * multiPoint);
+        vecArray[2] += right * (hitbox->capsuleRadius * multiPoint);
+        vecArray[3] += left * (hitbox->capsuleRadius * multiPoint);
         break;
-    default:
-        vecArray.emplace_back(center + right * radius);
-        vecArray.emplace_back(center + left * radius);
-        vecArray.emplace_back(center + forward * radius);
-        vecArray.emplace_back(center + forward * radius * 0.5f);
+    default://rest
+        for (auto i = 0; i < 3; ++i)
+            vecArray.emplace_back(center);
+
+        vecArray[1] += right * (hitbox->capsuleRadius * multiPoint);
+        vecArray[2] += left * (hitbox->capsuleRadius * multiPoint);
         break;
     }
     return vecArray;
 }
 
-
-bool hitscan::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* set, const matrix3x4 matrix[MAXSTUDIOBONES], Entity* activeWeapon, const Vector& destination, const UserCmd* cmd, const int hitChance) noexcept {
+bool hitscan::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* set, const matrix3x4 matrix[MAXSTUDIOBONES], Entity* activeWeapon, const Vector& destination, const UserCmd* cmd, const int hitChance) noexcept
+{
     static auto isSpreadEnabled = interfaces->cvar->findVar("weapon_accuracy_nospread");
     if (!hitChance || isSpreadEnabled->getInt() >= 1)
         return true;
 
-    constexpr int maxSeed = 255;
+    constexpr int maxSeed = 255;//default is 255,if you wanna reduce calcu just made it less
 
     const Angle angles(destination + cmd->viewangles);
 
     int hits = 0;
-    const int hitsNeed = static_cast<int>(static_cast<float>(maxSeed) * (static_cast<float>(hitChance) / 100.f));
+    const int hitsNeed = static_cast<int>(static_cast<float>(maxSeed) * (static_cast<float>(hitChance) * 0.01f));
 
     const auto weapSpread = activeWeapon->getSpread();
     const auto weapInaccuracy = activeWeapon->getInaccuracy();
     const auto localEyePosition = localPlayer->getEyePosition();
     const auto range = activeWeapon->getWeaponData()->range;
+    int i;
+    bool plz_hit_my_ass = false;
 
-    // Precompute random seeds
-    std::vector<std::tuple<float, float, float>> precomputedSeeds;
-    for (int i = 0; i < maxSeed; i++) {
-        memory->randomSeed(i + 1);
-        precomputedSeeds.emplace_back(memory->randomFloat(0.f, 1.f),
-            memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI)),
-            memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI)));
-    }
-
-    for (int i = 0; i < maxSeed; i++) {
-        const auto& seed = precomputedSeeds[i];
-        const float inaccuracy = weapInaccuracy * std::get<0>(seed);
-        const float spreadX = std::get<1>(seed);
-        const float spreadY = std::get<2>(seed);
-        const float spread = weapSpread * std::get<0>(seed);
+#pragma omp parallel for num_threads(maxThreadNum)
+    for (i = 0; i < maxSeed; ++i)//use openmp
+    {
+        memory->randomSeed(i + 1 + omp_get_thread_num());
+        const float spreadX = memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI));
+        const float spreadY = memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI));
+        auto inaccuracy = weapInaccuracy * memory->randomFloat(0.f, 1.f);
+        if (inaccuracy == 0) inaccuracy = 0.0000001f;
+        auto spread = weapSpread * memory->randomFloat(0.f, 1.f);
 
         Vector spreadView{ (cosf(spreadX) * inaccuracy) + (cosf(spreadY) * spread),
                            (sinf(spreadX) * inaccuracy) + (sinf(spreadY) * spread) };
-        Vector direction{ (angles.forward + (angles.right * spreadView.x) + (angles.up * spreadView.y)).normalized() * range };
+        Vector direction{ (angles.forward + (angles.right * spreadView.x) + (angles.up * spreadView.y)) * range };
 
-        for (int hitbox = 0; hitbox < Hitboxes::Max; hitbox++) {
-            if (hitboxIntersection(matrix, hitbox, set, localEyePosition, localEyePosition + direction)) {
+        for (int hitbox = 0; hitbox < Hitboxes::Max; hitbox++)
+        {
+            if (hitboxIntersection(matrix, hitbox, set, localEyePosition, localEyePosition + direction))
+            {
                 hits++;
                 break;
             }
         }
 
         if (hits >= hitsNeed)
-            return true;
+            plz_hit_my_ass = true;
 
-        if ((maxSeed - i + hits) < hitsNeed)
-            return false;
+        /*if ((maxSeed - (i + omp_get_thread_num()) + hits) < hitsNeed)
+            plz_hit_my_ass = false;*/
     }
-
-    return false;
+    return plz_hit_my_ass;
 }

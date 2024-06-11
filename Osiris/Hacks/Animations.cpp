@@ -1,11 +1,12 @@
 #include "../Memory.h"
 #include "../Interfaces.h"
 
+#include <intrin.h>
 #include "Animations.h"
 #include "Backtrack.h"
 #include "EnginePrediction.h"
 #include "Resolver.h"
-
+#include "AntiAim.h"
 #include "../SDK/LocalPlayer.h"
 #include "../SDK/Cvar.h"
 #include "../SDK/GlobalVars.h"
@@ -15,12 +16,16 @@
 #include "../SDK/MemAlloc.h"
 #include "../SDK/Input.h"
 #include "../SDK/Vector.h"
-
+#include "../Hooks.h"
+static bool lockAngles = false;
+static Vector holdAimAngles;
+static Vector anglesToAnimate;
 static std::array<Animations::Players, 65> players{};
 static std::array<matrix3x4, MAXSTUDIOBONES> fakematrix{};
 static std::array<matrix3x4, MAXSTUDIOBONES> fakelagmatrix{};
 static std::array<matrix3x4, MAXSTUDIOBONES> realmatrix{};
 static Vector localAngle{};
+static Vector sentViewangles{};
 static bool updatingLocal{ true };
 static bool updatingEntity{ false };
 static bool updatingFake{ false };
@@ -30,7 +35,6 @@ static bool gotMatrixFakelag{ false };
 static bool gotMatrixReal{ false };
 static Vector viewangles{};
 static Vector correctAngle{};
-static Vector sentViewangles{};
 static int buildTransformsIndex = -1;
 static std::array<AnimationLayer, 13> staticLayers{};
 static std::array<AnimationLayer, 13> layers{};
@@ -73,7 +77,6 @@ void Animations::reset() noexcept
     poseParameters = {};
     sendPacketLayers = {};
 }
-
 
 void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
 {
@@ -127,16 +130,11 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
 
     localPlayer->updateState(localPlayer->getAnimstate(), viewangles);
     localPlayer->updateClientSideAnimation();
-    
     std::memcpy(&layers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
     if (sendPacket)
     {
         Animations::sentViewangles = cmd->viewangles;
-        
         bool slowwalk = config->misc.slowwalk && config->misc.slowwalkKey.isActive();
-       
-        if (sendPacket)
-            sentViewangles = cmd->viewangles;
         std::memcpy(&sendPacketLayers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         footYaw = localPlayer->getAnimstate()->footYaw;
         poseParameters = localPlayer->poseParameters();
@@ -269,37 +267,6 @@ void Animations::renderStart(FrameStage stage) noexcept
             continue;
         l = layers.at(i);
     }
-}
-
-bool BreakingLagCompensation(Entity* entity)
-{
-    for (int i = 1; i <= interfaces->engine->getMaxClients(); i++)
-    {
-        auto& records = players.at(i);
-
-        auto prev_org = records.origin;
-        auto skip_first = true;
-
-        for (auto& record : players)
-        {
-            if (skip_first)
-            {
-                skip_first = false;
-                continue;
-            }
-
-            auto delta = records.origin - prev_org;
-            if (delta.length2DSqr() > 4096.f)
-                return true;
-
-            if (records.simulationTime <= entity->simulationTime())
-                break;
-
-            prev_org = records.origin;
-        }
-    }
-
-    return false;
 }
 
 float getExtraTicks() noexcept
@@ -463,8 +430,6 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 player.velocity.y = 0.f;
             }
 
-            auto& prev_records = players.at(i);
-
             Resolver::runPreUpdate(player, entity);
 
             //Run animations
@@ -516,8 +481,6 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             updatingEntity = false;
 
             Resolver::runPostUpdate(player, entity);
-
-            auto time_difference = max(memory->globalVars->intervalPerTick, entity->simulationTime() - player.simulationTime);
 
             //Fix jump pose
             if (!(entity->flags() & 1) && !player.oldlayers.empty())// && entity->moveType() != MoveType::NOCLIP)
@@ -676,7 +639,6 @@ void verifyLayer(int32_t layer) noexcept
     }
 }
 
-
 void Animations::postDataUpdate() noexcept
 {
     if (!localPlayer || !localPlayer->animOverlays())
@@ -720,7 +682,7 @@ Vector* Animations::getCorrectAngle() noexcept
 {
     return &sentViewangles;
 }
-    
+
 Vector* Animations::getViewAngles() noexcept
 {
     return &viewangles;

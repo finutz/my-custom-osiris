@@ -101,12 +101,8 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
              break;
             }
             case 4: //Up
-                cmd->viewangles.x = -89.f;
+                cmd->viewangles.x = 0.f;
                 break;
-            case 5 :{
-            //soon fake pitch 
-                break;
-            }
             
             default:
             break;
