@@ -147,7 +147,7 @@ void Triggerbot::run(UserCmd* cmd) noexcept
             if (!hitbox)
                 continue;
 
-            if (hitscan::hitboxIntersection(player.matrix.data(), j, set, startPos, endPos))
+            if (AimbotFunction::hitboxIntersection(player.matrix.data(), j, set, startPos, endPos))
             {
                 Trace trace;
                 interfaces->engineTrace->traceRay({ startPos, endPos }, 0x46004009, localPlayer.get(), trace);
@@ -160,20 +160,20 @@ void Triggerbot::run(UserCmd* cmd) noexcept
                 float damage = (activeWeapon->itemDefinitionIndex2() != WeaponId::Taser ? HitGroup::getDamageMultiplier(trace.hitgroup, weaponData, trace.entity->hasHeavyArmor(), static_cast<int>(trace.entity->getTeamNumber())) : 1.0f) * weaponData->damage * std::pow(weaponData->rangeModifier, trace.fraction * weaponData->range / 500.0f);
 
                 if (float armorRatio{ weaponData->armorRatio / 2.0f }; activeWeapon->itemDefinitionIndex2() != WeaponId::Taser && HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
-                    hitscan::calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
+                    AimbotFunction::calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
 
-                const auto destination = hitscan::calculateRelativeAngle(startPos, trace.endpos, cmd->viewangles + aimPunch);
+                const auto destination = AimbotFunction::calculateRelativeAngle(startPos, trace.endpos, cmd->viewangles + aimPunch);
 
                 if (damage >= (cfg.killshot ? trace.entity->health() : cfg.minDamage) && 
-                    hitscan::hitChance(localPlayer.get(), entity, set, player.matrix.data(), activeWeapon, destination, cmd, cfg.hitChance))
+                    AimbotFunction::hitChance(localPlayer.get(), entity, set, player.matrix.data(), activeWeapon, destination, cmd, cfg.hitChance))
                 {
                     cmd->buttons |= UserCmd::IN_ATTACK;
                     cmd->tickCount = timeToTicks(player.simulationTime + Backtrack::getLerp());
 
                     if (cfg.magnet)
                     {
-                        const auto centerHitbox = hitscan::getCenterOfHitbox(player.matrix.data(), hitbox);
-                        const auto angle = hitscan::calculateRelativeAngle(startPos, centerHitbox, cmd->viewangles + aimPunch);
+                        const auto centerHitbox = AimbotFunction::getCenterOfHitbox(player.matrix.data(), hitbox);
+                        const auto angle = AimbotFunction::calculateRelativeAngle(startPos, centerHitbox, cmd->viewangles + aimPunch);
 
                         cmd->viewangles += angle;
                         interfaces->engine->setViewAngles(cmd->viewangles);
@@ -204,7 +204,7 @@ void Triggerbot::run(UserCmd* cmd) noexcept
             if (!Backtrack::valid(records->at(i).simulationTime))
                 continue;
 
-            const auto angle = hitscan::calculateRelativeAngle(startPos, records->at(i).origin, cmd->viewangles + aimPunch);
+            const auto angle = AimbotFunction::calculateRelativeAngle(startPos, records->at(i).origin, cmd->viewangles + aimPunch);
             const auto fov = std::hypotf(angle.x, angle.y);
             if (fov < bestFov) {
                 bestFov = fov;
@@ -258,7 +258,7 @@ void Triggerbot::run(UserCmd* cmd) noexcept
             if (!hitbox)
                 continue;
 
-            if (hitscan::hitboxIntersection(record.matrix, j, set, startPos, endPos))
+            if (AimbotFunction::hitboxIntersection(record.matrix, j, set, startPos, endPos))
             {
                 Trace trace;
                 interfaces->engineTrace->traceRay({ startPos, endPos }, 0x46004009, localPlayer.get(), trace);
@@ -271,20 +271,20 @@ void Triggerbot::run(UserCmd* cmd) noexcept
                 float damage = (activeWeapon->itemDefinitionIndex2() != WeaponId::Taser ? HitGroup::getDamageMultiplier(trace.hitgroup, weaponData, trace.entity->hasHeavyArmor(), static_cast<int>(trace.entity->getTeamNumber())) : 1.0f) * weaponData->damage * std::pow(weaponData->rangeModifier, trace.fraction * weaponData->range / 500.0f);
 
                 if (float armorRatio{ weaponData->armorRatio / 2.0f }; activeWeapon->itemDefinitionIndex2() != WeaponId::Taser && HitGroup::isArmored(trace.hitgroup, trace.entity->hasHelmet(), trace.entity->armor(), trace.entity->hasHeavyArmor()))
-                    hitscan::calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
+                    AimbotFunction::calculateArmorDamage(armorRatio, trace.entity->armor(), trace.entity->hasHeavyArmor(), damage);
 
-                const auto destination = hitscan::calculateRelativeAngle(startPos, trace.endpos, cmd->viewangles + aimPunch);
+                const auto destination = AimbotFunction::calculateRelativeAngle(startPos, trace.endpos, cmd->viewangles + aimPunch);
 
                 if (damage >= (cfg.killshot ? trace.entity->health() : cfg.minDamage) &&
-                    hitscan::hitChance(localPlayer.get(), entity, set, record.matrix, activeWeapon, destination, cmd, cfg.hitChance))
+                    AimbotFunction::hitChance(localPlayer.get(), entity, set, record.matrix, activeWeapon, destination, cmd, cfg.hitChance))
                 {
                     cmd->buttons |= UserCmd::IN_ATTACK;
                     cmd->tickCount = timeToTicks(record.simulationTime + Backtrack::getLerp());
 
                     if (cfg.magnet)
                     {
-                        const auto centerHitbox = hitscan::getCenterOfHitbox(player.matrix.data(), hitbox);
-                        const auto angle = hitscan::calculateRelativeAngle(startPos, centerHitbox, cmd->viewangles + aimPunch);
+                        const auto centerHitbox = AimbotFunction::getCenterOfHitbox(player.matrix.data(), hitbox);
+                        const auto angle = AimbotFunction::calculateRelativeAngle(startPos, centerHitbox, cmd->viewangles + aimPunch);
 
                         cmd->viewangles += angle;
                         interfaces->engine->setViewAngles(cmd->viewangles);

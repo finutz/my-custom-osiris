@@ -1,4 +1,7 @@
-﻿
+#include <mutex>
+#include <numeric>
+#include <sstream>
+#include <string>
 
 #include "../imgui/imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -11,13 +14,9 @@
 #include "../GUI.h"
 #include "../Helpers.h"
 #include "../GameData.h"
-#include "Tickbase.h"
-#include "AntiAim.h"
 
-#include "../Hooks.h"
 #include "EnginePrediction.h"
 #include "Misc.h"
-#include "../SDK/ViewRenderBeams.h"
 
 #include "../SDK/Client.h"
 #include "../SDK/ClientMode.h"
@@ -28,9 +27,7 @@
 #include "../SDK/GlobalVars.h"
 #include "../SDK/Input.h"
 #include "../SDK/ItemSchema.h"
-#include "../Localize.h"
-#include "../SDK/MaterialSystem.h"
-#include "../SDK/Material.h"
+#include "../SDK/Localize.h"
 #include "../SDK/LocalPlayer.h"
 #include "../SDK/NetworkChannel.h"
 #include "../SDK/Panorama.h"
@@ -41,18 +38,8 @@
 #include "../SDK/ViewSetup.h"
 #include "../SDK/WeaponData.h"
 #include "../SDK/WeaponSystem.h"
-#include "../SDK/Steam.h"
+
 #include "../imguiCustom.h"
-#include <TlHelp32.h>
-#include  <mutex>
-#include  <numeric>
-#include  <sstream>
-#include  <string>
-
-#include "Visuals.h"
-
-UserCmd* cmd1;
-int goofy;
 
 bool Misc::isInChat() noexcept
 {
@@ -1388,12 +1375,12 @@ void Misc::updateClanTag(bool tagChanged) noexcept
 {
     static bool wasEnabled = false;
     static auto clanId = interfaces->cvar->findVar("cl_clanid");
-    if (!config->misc.clantag && wasEnabled)
+    if (!config->misc.customClanTag && wasEnabled)
     {
         interfaces->engine->clientCmdUnrestricted(("cl_clanid " + std::to_string(clanId->getInt())).c_str());
         wasEnabled = false;
     }
-    if (!config->misc.clantag)
+    if (!config->misc.customClanTag)
     {
         return;
     }
@@ -1402,7 +1389,7 @@ void Misc::updateClanTag(bool tagChanged) noexcept
 
     static int lastTime = 0;
     int time = memory->globalVars->currenttime * M_PI;
-    if (config->misc.clantag)
+    if (config->misc.customClanTag)
     {
         wasEnabled = true;
         if (time != lastTime)
@@ -1444,8 +1431,6 @@ void Misc::updateClanTag(bool tagChanged) noexcept
         lastTime = time;
     }
 }
-
-
 const bool anyActiveKeybinds() noexcept
 {
     const bool rageBot = config->ragebotKey.canShowKeybind();
@@ -2101,7 +2086,7 @@ void Misc::killMessage(GameEvent& event) noexcept
         return;
 
     srand(time(0));
-    auto randomMessage = rand() % 4;
+    auto randomMessage = rand() % 3;
     std::string killMessage = "";
 
     switch (randomMessage)
@@ -2113,10 +2098,7 @@ void Misc::killMessage(GameEvent& event) noexcept
         killMessage = "Better luck next time!";
         break;
     case 2:
-        killMessage = "way too ez for BetterOsiris";
-        break;
-    case 3:
-        killMessage = "● DEAD jannes™‎ : rostogolimias pulan pilafu mati";
+        killMessage = "('skull_emoji')";
         break;
     }
 

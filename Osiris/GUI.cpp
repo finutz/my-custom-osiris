@@ -685,7 +685,7 @@ void GUI::renderRageAntiAimWindow() noexcept
     ImGui::SetColumnOffset(1, 300.f);
     ImGui::Checkbox("Enabled", &config->rageAntiAim.enabled);
     ImGui::Checkbox("Disable in freeztime", &config->disableInFreezetime);
-    ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Zero\0");
+    ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Up\0");
     ImGui::Combo("Yaw base", reinterpret_cast<int*>(&config->rageAntiAim.yawBase), "Off\0Forward\0Backward\0Right\0Left\0Spin\0");
     ImGui::Combo("Yaw modifier", reinterpret_cast<int*>(&config->rageAntiAim.yawModifier), "Off\0Jitter\0ThreeWay\0");
     ImGui::PushItemWidth(220.0f);
@@ -1904,20 +1904,17 @@ void GUI::renderMiscWindow() noexcept
     ImGui::SliderFloat("Aspect Ratio", &config->misc.aspectratio, 0.0f, 5.0f, "%.2f");
     ImGui::NextColumn();
     ImGui::Checkbox("Disable HUD blur", &config->misc.disablePanoramablur);
-    ImGui::Checkbox("Animated clan tag", &config->misc.animatedClanTag);
-  //ImGui::Checkbox("Clock tag", &config->misc.clocktag);
-    ImGui::Checkbox("Clantag", &config->misc.clantag);
-   /*
-    ImGui::SameLine();
-    ImGui::PushItemWidth(120.0f);
-    ImGui::PushID(0);
-    */
+   // ImGui::Checkbox("Animated clan tag", &config->misc.animatedClanTag);
+    //ImGui::Checkbox("Clock tag", &config->misc.clocktag);
+    ImGui::Checkbox("Clantag", &config->misc.customClanTag);
+    //ImGui::SameLine();
+    //ImGui::PushItemWidth(120.0f);
+    //ImGui::PushID(0);
     /*
     if (ImGui::InputText("", config->misc.clanTag, sizeof(config->misc.clanTag)))
         Misc::updateClanTag(true);
     ImGui::PopID();
     */
-
     ImGui::Checkbox("Custom name", &config->misc.customName);
     ImGui::SameLine();
     ImGui::PushItemWidth(120.0f);
@@ -2612,7 +2609,7 @@ void GUI::renderGuiStyle() noexcept {
                     ImGui::BeginChild("##Text", ImVec2{ 700, 20 }, false); // Slightly increased width
                     {
                         ImGui::SetCursorPos(ImVec2{ 2, 2 });
-                        ImGui::Text("Better Osiris Made In https://github.com/finutz/my-custom-osiris");
+                        ImGui::Text("Better Osiris Made In https://github.com/notgoodusename/OsirisAndExtra");
                     }
                     ImGui::EndChild();
                 }

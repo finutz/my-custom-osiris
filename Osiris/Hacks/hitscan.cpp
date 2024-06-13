@@ -18,11 +18,39 @@
 
 #include <omp.h>
 #include <thread>
+int maxThreadNum = (std::thread::hardware_concurrency());
 
-Vector hitscan::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
+#include <vector>
+#include <future>
+#include <algorithm>
+#include <cmath>
+
+#define TICKS_TO_TIME(t) (memory->globalVars->m_intervalpertick * (t))
+
+#define TICK_INTERVAL            ( memory->globalVars->currenttime )
+
+#define TIME_TO_TICKS( dt )        ( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
+
+Vector AimbotFunction::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
 {
     return ((destination - source).toAngle() - viewAngles).normalize();
 }
+
+
+inline void VectorTransform(const Vector& in1, const matrix3x4& in2, Vector& out) {
+    out.x = in1.x * in2[0][0] + in1.y * in2[0][1] + in1.z * in2[0][2] + in2[0][3];
+    out.y = in1.x * in2[1][0] + in1.y * in2[1][1] + in1.z * in2[1][2] + in2[1][3];
+    out.z = in1.x * in2[2][0] + in1.y * in2[2][1] + in1.z * in2[2][2] + in2[2][3];
+}//for multipoint
+
+/// idk what i am doing
+
+inline void addPoints(std::vector<Vector>& vecArray, const Vector& base, const Vector& right, const Vector& up, float radius) {
+    vecArray.emplace_back(base + up * radius);
+    vecArray.emplace_back(base + right * radius);
+    vecArray.emplace_back(base - right * radius);
+    vecArray.emplace_back(base - up * radius);
+}//for multipoint
 
 static bool traceToExit(const Trace& enterTrace, const Vector& start, const Vector& direction, Vector& end, Trace& exitTrace, float range = 90.f, float step = 4.0f)
 {
@@ -105,7 +133,7 @@ static float handleBulletPenetration(SurfaceData* enterSurfaceData, const Trace&
     return damage;
 }
 
-void hitscan::calculateArmorDamage(float armorRatio, int armorValue, bool hasHeavyArmor, float& damage) noexcept
+void AimbotFunction::calculateArmorDamage(float armorRatio, int armorValue, bool hasHeavyArmor, float& damage) noexcept
 {
     auto armorScale = 1.0f;
     auto armorBonusRatio = 0.5f;
@@ -126,10 +154,19 @@ void hitscan::calculateArmorDamage(float armorRatio, int armorValue, bool hasHea
     damage = newDamage;
 }
 
-bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
+bool getSafePoints(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioHitboxSet* set, Vector start_position, Vector end_position, int hitbox) noexcept
+{
+    if (AimbotFunction::hitboxIntersection(matrix, hitbox, set, start_position, end_position))
+        return true;
+
+    return false;
+}
+
+bool AimbotFunction::canScan(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
     if (!localPlayer)
         return false;
+
 
     float damage{ static_cast<float>(weaponData->damage) };
 
@@ -175,7 +212,8 @@ bool hitscan::canScan(Entity* entity, const Vector& destination, const WeaponInf
     return false;
 }
 
-float hitscan::getScanDamage(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
+
+float AimbotFunction::getScanDamage(Entity* entity, const Vector& destination, const WeaponInfo* weaponData, int minDamage, bool allowFriendlyFire) noexcept
 {
     if (!localPlayer)
         return 0.f;
@@ -315,7 +353,9 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
     const float mi[3] = { min.x, min.y, min.z };
     const float ma[3] = { max.x, max.y, max.z };
 
-    for (auto i = 0; i < 6; i++) {
+    bool result = start_solid || (t1 < t2 && t1 >= 0.0f);
+#pragma omp parallel for num_threads(maxThreadNum)
+    for (auto i = 0; i < 6; ++i) {
         if (i >= 3) {
             const auto j = i - 3;
 
@@ -328,7 +368,7 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
 
         if (d1 > 0.0f && d2 > 0.0f)
-            return false;
+            result = false;
 
         if (d1 <= 0.0f && d2 <= 0.0f)
             continue;
@@ -352,7 +392,7 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
     }
 
-    return start_solid || (t1 < t2 && t1 >= 0.0f);
+    return result;
 }
 
 void inline sinCos(float radians, float* sine, float* cosine)
@@ -364,38 +404,38 @@ void inline sinCos(float radians, float* sine, float* cosine)
 Vector vectorRotate(Vector& in1, Vector& in2) noexcept
 {
     auto vector_rotate = [](const Vector& in1, const matrix3x4& in2)
-        {
-            return Vector(in1.dotProduct(in2[0]), in1.dotProduct(in2[1]), in1.dotProduct(in2[2]));
-        };
+    {
+        return Vector(in1.dotProduct(in2[0]), in1.dotProduct(in2[1]), in1.dotProduct(in2[2]));
+    };
     auto angleMatrix = [](const Vector& angles, matrix3x4& matrix)
-        {
-            float sr, sp, sy, cr, cp, cy;
+    {
+        float sr, sp, sy, cr, cp, cy;
 
-            sinCos(Helpers::deg2rad(angles[1]), &sy, &cy);
-            sinCos(Helpers::deg2rad(angles[0]), &sp, &cp);
-            sinCos(Helpers::deg2rad(angles[2]), &sr, &cr);
+        sinCos(Helpers::deg2rad(angles[1]), &sy, &cy);
+        sinCos(Helpers::deg2rad(angles[0]), &sp, &cp);
+        sinCos(Helpers::deg2rad(angles[2]), &sr, &cr);
 
-            // matrix = (YAW * PITCH) * ROLL
-            matrix[0][0] = cp * cy;
-            matrix[1][0] = cp * sy;
-            matrix[2][0] = -sp;
+        // matrix = (YAW * PITCH) * ROLL
+        matrix[0][0] = cp * cy;
+        matrix[1][0] = cp * sy;
+        matrix[2][0] = -sp;
 
-            float crcy = cr * cy;
-            float crsy = cr * sy;
-            float srcy = sr * cy;
-            float srsy = sr * sy;
-            matrix[0][1] = sp * srcy - crsy;
-            matrix[1][1] = sp * srsy + crcy;
-            matrix[2][1] = sr * cp;
+        float crcy = cr * cy;
+        float crsy = cr * sy;
+        float srcy = sr * cy;
+        float srsy = sr * sy;
+        matrix[0][1] = sp * srcy - crsy;
+        matrix[1][1] = sp * srsy + crcy;
+        matrix[2][1] = sr * cp;
 
-            matrix[0][2] = (sp * crcy + srsy);
-            matrix[1][2] = (sp * crsy - srcy);
-            matrix[2][2] = cr * cp;
+        matrix[0][2] = (sp * crcy + srsy);
+        matrix[1][2] = (sp * crsy - srcy);
+        matrix[2][2] = cr * cp;
 
-            matrix[0][3] = 0.0f;
-            matrix[1][3] = 0.0f;
-            matrix[2][3] = 0.0f;
-        };
+        matrix[0][3] = 0.0f;
+        matrix[1][3] = 0.0f;
+        matrix[2][3] = 0.0f;
+    };
     matrix3x4 m;
     angleMatrix(in2, m);
     return vector_rotate(in1, m);
@@ -415,22 +455,22 @@ void vectorIRotate(Vector in1, matrix3x4 in2, Vector& out) noexcept
     out.z = in1.x * in2[0][2] + in1.y * in2[1][2] + in1.z * in2[2][2];
 }
 
-bool hitscan::hitboxIntersection(const matrix3x4 matrix[MAXSTUDIOBONES], int iHitbox, StudioHitboxSet* set, const Vector& start, const Vector& end) noexcept
+bool AimbotFunction::hitboxIntersection(const matrix3x4 matrix[MAXSTUDIOBONES], int iHitbox, StudioHitboxSet* set, const Vector& start, const Vector& end) noexcept
 {
     auto VectorTransform_Wrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
+    {
+        auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
         {
-            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
-                {
-                    auto DotProducts = [](const float* v1, const float* v2)
-                        {
-                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-                        };
-                    out[0] = DotProducts(in1, in2[0]) + in2[0][3];
-                    out[1] = DotProducts(in1, in2[1]) + in2[1][3];
-                    out[2] = DotProducts(in1, in2[2]) + in2[2][3];
-                };
-            VectorTransform(&in1.x, in2, &out.x);
+            auto DotProducts = [](const float* v1, const float* v2)
+            {
+                return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+            };
+            out[0] = DotProducts(in1, in2[0]) + in2[0][3];
+            out[1] = DotProducts(in1, in2[1]) + in2[1][3];
+            out[2] = DotProducts(in1, in2[2]) + in2[2][3];
         };
+        VectorTransform(&in1.x, in2, &out.x);
+    };
 
     StudioBbox* hitbox = set->getHitbox(iHitbox);
     if (!hitbox)
@@ -464,22 +504,22 @@ bool hitscan::hitboxIntersection(const matrix3x4 matrix[MAXSTUDIOBONES], int iHi
     return false;
 }
 
-Vector hitscan::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox) noexcept
+Vector AimbotFunction::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox) noexcept
 {
     auto VectorTransformWrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
+    {
+        auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
         {
-            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
-                {
-                    auto dotProducts = [](const float* v1, const float* v2)
-                        {
-                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-                        };
-                    out[0] = dotProducts(in1, in2[0]) + in2[0][3];
-                    out[1] = dotProducts(in1, in2[1]) + in2[1][3];
-                    out[2] = dotProducts(in1, in2[2]) + in2[2][3];
-                };
-            VectorTransform(&in1.x, in2, &out.x);
+            auto dotProducts = [](const float* v1, const float* v2)
+            {
+                return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+            };
+            out[0] = dotProducts(in1, in2[0]) + in2[0][3];
+            out[1] = dotProducts(in1, in2[1]) + in2[1][3];
+            out[2] = dotProducts(in1, in2[2]) + in2[2][3];
         };
+        VectorTransform(&in1.x, in2, &out.x);
+    };
 
     Vector min, max;
     VectorTransformWrapper(hitbox->bbMin, matrix[hitbox->bone], min);
@@ -488,99 +528,85 @@ Vector hitscan::getCenterOfHitbox(const matrix3x4 matrix[MAXSTUDIOBONES], Studio
 }
 
 
-std::vector<Vector> hitscan::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint)
-{
-    auto VectorTransformWrapper = [](const Vector& in1, const matrix3x4 in2, Vector& out)
-        {
-            auto VectorTransform = [](const float* in1, const matrix3x4 in2, float* out)
-                {
-                    auto dotProducts = [](const float* v1, const float* v2)
-                        {
-                            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-                        };
-                    out[0] = dotProducts(in1, in2[0]) + in2[0][3];
-                    out[1] = dotProducts(in1, in2[1]) + in2[1][3];
-                    out[2] = dotProducts(in1, in2[2]) + in2[2][3];
-                };
-            VectorTransform(&in1.x, in2, &out.x);
-        };
-
+std::vector<Vector> AimbotFunction::multiPoint(Entity* entity, const matrix3x4 matrix[MAXSTUDIOBONES], StudioBbox* hitbox, Vector localEyePos, int _hitbox, int _multiPoint) {
     Vector min, max, center;
-    VectorTransformWrapper(hitbox->bbMin, matrix[hitbox->bone], min);
-    VectorTransformWrapper(hitbox->bbMax, matrix[hitbox->bone], max);
+    VectorTransform(hitbox->bbMin, matrix[hitbox->bone], min);
+    VectorTransform(hitbox->bbMax, matrix[hitbox->bone], max);
     center = (min + max) * 0.5f;
 
     std::vector<Vector> vecArray;
+    vecArray.reserve(5); // Reserve space for the worst-case scenario (4 points + center)
 
-    if (_multiPoint <= 0)
-    {
+    if (_multiPoint <= 0) {
         vecArray.emplace_back(center);
         return vecArray;
     }
+
     vecArray.emplace_back(center);
 
-    Vector currentAngles = hitscan::calculateRelativeAngle(center, localEyePos, Vector{});
+    Vector currentAngles = AimbotFunction::calculateRelativeAngle(center, localEyePos, Vector{});
+    Vector forward = Vector::fromAngle(currentAngles);
 
-    Vector forward;
-    Vector::fromAngle(currentAngles, &forward);
+    Vector right = forward.cross(Vector{ 0, 0, 1 }).normalized();
+    Vector up = Vector{ 0, 0, 1 };
 
-    Vector right = forward.cross(Vector{ 0, 0, 1 });
-    Vector left = Vector{ -right.x, -right.y, right.z };
+    float multiPointFactor = std::clamp(_multiPoint * 0.01f, 0.0f, 1.0f);
+    float radius = hitbox->capsuleRadius * multiPointFactor;
 
-    Vector top = Vector{ 0, 0, 1 };
-    Vector bottom = Vector{ 0, 0, -1 };
-
-    float multiPoint = (min(_multiPoint, 95)) * 0.01f;
-
-    switch (_hitbox)
-    {
+    switch (_hitbox) {
     case Hitboxes::Head:
-        for (auto i = 0; i < 4; ++i)
-            vecArray.emplace_back(center);
-
-        vecArray[1] += top * (hitbox->capsuleRadius * multiPoint);
-        vecArray[2] += right * (hitbox->capsuleRadius * multiPoint);
-        vecArray[3] += left * (hitbox->capsuleRadius * multiPoint);
+        addPoints(vecArray, center, right, up, radius);
         break;
-    default://rest
-        for (auto i = 0; i < 3; ++i)
-            vecArray.emplace_back(center);
-
-        vecArray[1] += right * (hitbox->capsuleRadius * multiPoint);
-        vecArray[2] += left * (hitbox->capsuleRadius * multiPoint);
+    case Hitboxes::Neck:
+    case Hitboxes::Belly:
+    case Hitboxes::Pelvis:
+    case Hitboxes::Thorax:
+    case Hitboxes::UpperChest:
+    case Hitboxes::LowerChest:
+        vecArray.emplace_back(center + right * radius);
+        vecArray.emplace_back(center - right * radius);
+        vecArray.emplace_back(center + forward * radius);
+        vecArray.emplace_back(center - forward * radius);
+        break;
+    case Hitboxes::LeftFoot:
+    case Hitboxes::RightFoot:
+    case Hitboxes::LeftHand:
+    case Hitboxes::RightHand:
+        addPoints(vecArray, center, right, up, radius * 0.5f);
+        break;
+    default:
+        vecArray.emplace_back(center + right * radius);
+        vecArray.emplace_back(center - right * radius);
         break;
     }
+
     return vecArray;
 }
 
-bool hitscan::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* set, const matrix3x4 matrix[MAXSTUDIOBONES], Entity* activeWeapon, const Vector& destination, const UserCmd* cmd, const int hitChance) noexcept
+bool AimbotFunction::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* set, const matrix3x4 matrix[MAXSTUDIOBONES], Entity* activeWeapon, const Vector& destination, const UserCmd* cmd, const int hitChance) noexcept
 {
     static auto isSpreadEnabled = interfaces->cvar->findVar("weapon_accuracy_nospread");
     if (!hitChance || isSpreadEnabled->getInt() >= 1)
         return true;
 
-    constexpr int maxSeed = 255;//default is 255,if you wanna reduce calcu just made it less
+    constexpr int maxSeed = 255;
 
     const Angle angles(destination + cmd->viewangles);
 
     int hits = 0;
-    const int hitsNeed = static_cast<int>(static_cast<float>(maxSeed) * (static_cast<float>(hitChance) * 0.01f));
+    const int hitsNeed = static_cast<int>(static_cast<float>(maxSeed) * (static_cast<float>(hitChance) / 100.f));
 
     const auto weapSpread = activeWeapon->getSpread();
     const auto weapInaccuracy = activeWeapon->getInaccuracy();
     const auto localEyePosition = localPlayer->getEyePosition();
     const auto range = activeWeapon->getWeaponData()->range;
-    int i;
-    bool plz_hit_my_ass = false;
 
-#pragma omp parallel for num_threads(maxThreadNum)
-    for (i = 0; i < maxSeed; ++i)//use openmp
+    for (int i = 0; i < maxSeed; i++)
     {
-        memory->randomSeed(i + 1 + omp_get_thread_num());
+        memory->randomSeed(i + 1);
         const float spreadX = memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI));
         const float spreadY = memory->randomFloat(0.f, 2.f * static_cast<float>(M_PI));
         auto inaccuracy = weapInaccuracy * memory->randomFloat(0.f, 1.f);
-        if (inaccuracy == 0) inaccuracy = 0.0000001f;
         auto spread = weapSpread * memory->randomFloat(0.f, 1.f);
 
         Vector spreadView{ (cosf(spreadX) * inaccuracy) + (cosf(spreadY) * spread),
@@ -597,10 +623,10 @@ bool hitscan::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* se
         }
 
         if (hits >= hitsNeed)
-            plz_hit_my_ass = true;
+            return true;
 
-        /*if ((maxSeed - (i + omp_get_thread_num()) + hits) < hitsNeed)
-            plz_hit_my_ass = false;*/
+        if ((maxSeed - i + hits) < hitsNeed)
+            return false;
     }
-    return plz_hit_my_ass;
+    return false;
 }

@@ -101,8 +101,12 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
              break;
             }
             case 4: //Up
-                cmd->viewangles.x = 0.f;
+                cmd->viewangles.x = -89.f;
                 break;
+            case 5 :{
+            //soon fake pitch 
+                break;
+            }
             
             default:
             break;
@@ -130,7 +134,7 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                         || !entity->isOtherEnemy(localPlayer.get()) || entity->gunGameImmunity())
                         continue;
 
-                    const auto angle{ hitscan::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles + aimPunch) };
+                    const auto angle{ AimbotFunction::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles + aimPunch) };
                     const auto fov{ angle.length2D() };
                     if (fov < bestFov)
                     {
