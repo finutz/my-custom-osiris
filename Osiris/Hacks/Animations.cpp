@@ -75,8 +75,7 @@ void Animations::reset() noexcept
 }
 
 
-void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
-{
+void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept {
     static float spawnTime = 0.f;
 
     if (!localPlayer || !localPlayer->isAlive())
@@ -85,23 +84,20 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     if (interfaces->engine->isHLTV())
         return;
 
-    if (spawnTime != localPlayer->spawnTime())
-    {
+    if (spawnTime != localPlayer->spawnTime()) {
         spawnTime = localPlayer->spawnTime();
-        for (int i = 0; i < 13; i++)
-        {
+        for (int i = 0; i < 13; i++) {
             if (i == ANIMATION_LAYER_FLINCH ||
                 i == ANIMATION_LAYER_FLASHED ||
                 i == ANIMATION_LAYER_WHOLE_BODY ||
                 i == ANIMATION_LAYER_WEAPON_ACTION ||
                 i == ANIMATION_LAYER_WEAPON_ACTION_RECROUCH)
-            {
                 continue;
-            }
-            auto& l = *localPlayer->getAnimationLayer(i);
-            if (!&l)
+
+            auto& layer = *localPlayer->getAnimationLayer(i);
+            if (!&layer)
                 continue;
-            l.reset();
+            layer.reset();
         }
     }
 
@@ -113,42 +109,34 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     localPlayer->getAnimstate()->buttons = cmd->buttons;
     if (sendPacket)
         sentViewangles = cmd->viewangles;
+
     updatingLocal = true;
 
-    // allow animations to be animated in the same frame
-    if (localPlayer->getAnimstate()->lastUpdateFrame == memory->globalVars->framecount)
-        localPlayer->getAnimstate()->lastUpdateFrame -= 1;
+    auto animState = localPlayer->getAnimstate();
+    if (animState->lastUpdateFrame == memory->globalVars->framecount)
+        animState->lastUpdateFrame -= 1;
 
-    if (localPlayer->getAnimstate()->lastUpdateTime == memory->globalVars->currenttime)
-        localPlayer->getAnimstate()->lastUpdateTime += ticksToTime(1);
+    if (animState->lastUpdateTime == memory->globalVars->currenttime)
+        animState->lastUpdateTime += ticksToTime(1);
 
     localPlayer->getEFlags() &= ~0x1000;
     localPlayer->getAbsVelocity() = EnginePrediction::getVelocity();
 
-    localPlayer->updateState(localPlayer->getAnimstate(), viewangles);
+    localPlayer->updateState(animState, viewangles);
     localPlayer->updateClientSideAnimation();
-    
+
     std::memcpy(&layers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
-    if (sendPacket)
-    {
+    if (sendPacket) {
         Animations::sentViewangles = cmd->viewangles;
-        
-        bool slowwalk = config->misc.slowwalk && config->misc.slowwalkKey.isActive();
-       
-        if (sendPacket)
-            sentViewangles = cmd->viewangles;
         std::memcpy(&sendPacketLayers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
-        footYaw = localPlayer->getAnimstate()->footYaw;
+        footYaw = animState->footYaw;
         poseParameters = localPlayer->poseParameters();
         gotMatrixReal = localPlayer->setupBones(realmatrix.data(), localPlayer->getBoneCache().size, 0x7FF00, memory->globalVars->currenttime);
-        const auto origin = localPlayer->getRenderOrigin();
-        if (gotMatrixReal)
-        {
-            for (auto& i : realmatrix)
-            {
-                i[0][3] -= localPlayer->getRenderOrigin().x;
-                i[1][3] -= localPlayer->getRenderOrigin().y;
-                i[2][3] -= localPlayer->getRenderOrigin().z;
+        if (gotMatrixReal) {
+            for (auto& boneMatrix : realmatrix) {
+                boneMatrix[0][3] -= localPlayer->getRenderOrigin().x;
+                boneMatrix[1][3] -= localPlayer->getRenderOrigin().y;
+                boneMatrix[2][3] -= localPlayer->getRenderOrigin().z;
             }
         }
         localAngle = cmd->viewangles;
@@ -157,8 +145,8 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
     updatingLocal = false;
 }
 
-void Animations::fake() noexcept
-{
+
+void Animations::fake() noexcept {
     static AnimState* fakeAnimState = nullptr;
     static bool updateFakeAnim = true;
     static bool initFakeAnim = true;
@@ -170,39 +158,31 @@ void Animations::fake() noexcept
     if (interfaces->engine->isHLTV())
         return;
 
-    if (spawnTime != localPlayer->spawnTime() || updateFakeAnim)
-    {
+    if (spawnTime != localPlayer->spawnTime() || updateFakeAnim) {
         spawnTime = localPlayer->spawnTime();
         initFakeAnim = false;
         updateFakeAnim = false;
     }
 
-    if (!initFakeAnim)
-    {
+    if (!initFakeAnim) {
         fakeAnimState = static_cast<AnimState*>(memory->memalloc->Alloc(sizeof(AnimState)));
-
         if (fakeAnimState != nullptr)
             localPlayer->createState(fakeAnimState);
-
         initFakeAnim = true;
     }
 
     if (!fakeAnimState)
         return;
 
-    if (sendPacket)
-    {
+    if (sendPacket) {
         updatingFake = true;
-
         std::array<AnimationLayer, 13> layers;
-
         std::memcpy(&layers, localPlayer->animOverlays(), sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         const auto backupAbs = localPlayer->getAbsAngle();
         const auto backupPoses = localPlayer->poseParameters();
 
         localPlayer->updateState(fakeAnimState, viewangles);
-        if (fabsf(fakeAnimState->footYaw - footYaw) <= 5.f)
-        {
+        if (fabsf(fakeAnimState->footYaw - footYaw) <= 5.f) {
             gotMatrix = false;
             updatingFake = false;
 
@@ -214,37 +194,35 @@ void Animations::fake() noexcept
 
             std::memcpy(localPlayer->animOverlays(), &layers, sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
             localPlayer->poseParameters() = backupPoses;
-            memory->setAbsAngle(localPlayer.get(), Vector{ 0,backupAbs.y,0 });
+            memory->setAbsAngle(localPlayer.get(), Vector{ 0, backupAbs.y, 0 });
             return;
         }
+
         memory->setAbsAngle(localPlayer.get(), Vector{ 0, fakeAnimState->footYaw, 0 });
         std::memcpy(localPlayer->animOverlays(), &layers, sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         localPlayer->getAnimationLayer(ANIMATION_LAYER_LEAN)->weight = std::numeric_limits<float>::epsilon();
 
         gotMatrix = localPlayer->setupBones(fakematrix.data(), localPlayer->getBoneCache().size, 0x7FF00, memory->globalVars->currenttime);
         gotMatrixFakelag = gotMatrix;
-        if (gotMatrix)
-        {
+        if (gotMatrix) {
             std::copy(fakematrix.begin(), fakematrix.end(), fakelagmatrix.data());
             const auto origin = localPlayer->getRenderOrigin();
-            for (auto& i : fakematrix)
-            {
-                i[0][3] -= origin.x;
-                i[1][3] -= origin.y;
-                i[2][3] -= origin.z;
+            for (auto& boneMatrix : fakematrix) {
+                boneMatrix[0][3] -= origin.x;
+                boneMatrix[1][3] -= origin.y;
+                boneMatrix[2][3] -= origin.z;
             }
         }
 
         std::memcpy(localPlayer->animOverlays(), &layers, sizeof(AnimationLayer) * localPlayer->getAnimationLayersCount());
         localPlayer->poseParameters() = backupPoses;
-        memory->setAbsAngle(localPlayer.get(), Vector{ 0,backupAbs.y,0 });
+        memory->setAbsAngle(localPlayer.get(), Vector{ 0, backupAbs.y, 0 });
 
         updatingFake = false;
     }
 }
 
-void Animations::renderStart(FrameStage stage) noexcept
-{
+void Animations::renderStart(FrameStage stage) noexcept {
     if (stage != FrameStage::RENDER_START)
         return;
 
@@ -254,22 +232,21 @@ void Animations::renderStart(FrameStage stage) noexcept
     if (interfaces->engine->isHLTV())
         return;
 
-    for (int i = 0; i < 13; i++)
-    {
+    for (int i = 0; i < 13; i++) {
         if (i == ANIMATION_LAYER_FLINCH ||
             i == ANIMATION_LAYER_FLASHED ||
             i == ANIMATION_LAYER_WHOLE_BODY ||
             i == ANIMATION_LAYER_WEAPON_ACTION ||
             i == ANIMATION_LAYER_WEAPON_ACTION_RECROUCH)
-        {
             continue;
-        }
-        auto& l = *localPlayer->getAnimationLayer(i);
-        if (!&l)
+
+        auto& layer = *localPlayer->getAnimationLayer(i);
+        if (!&layer)
             continue;
-        l = layers.at(i);
+        layer = layers.at(i);
     }
 }
+
 
 bool BreakingLagCompensation(Entity* entity)
 {
@@ -566,6 +543,7 @@ void Animations::handlePlayers(FrameStage stage) noexcept {
         entity->updateClientSideAnimation();
     }
 }
+
 
 
 

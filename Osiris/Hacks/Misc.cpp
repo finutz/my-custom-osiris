@@ -1414,7 +1414,7 @@ void Misc::updateClanTag(bool tagChanged) noexcept
             case 15: { memory->setClanTag(" Bet ", " Bet "); break; }
             case 16: { memory->setClanTag(" Be ", " Be "); break; }
             case 17: { memory->setClanTag(" B ", " B "); break; }
-            case 18: { memory->setClanTag(" ", " "); break; }
+            case 18: { memory->setClanTag("9/11 ", "9/11 "); break; }
             case 19: { memory->setClanTag(" B ", " B "); break; }
             case 20: { memory->setClanTag(" Be ", " Be "); break; }
             case 21: { memory->setClanTag(" Bet ", " Bet "); break; }
@@ -2086,7 +2086,7 @@ void Misc::killMessage(GameEvent& event) noexcept
         return;
 
     srand(time(0));
-    auto randomMessage = rand() % 3;
+    auto randomMessage = rand() % 4;
     std::string killMessage = "";
 
     switch (randomMessage)
@@ -2098,8 +2098,10 @@ void Misc::killMessage(GameEvent& event) noexcept
         killMessage = "Better luck next time!";
         break;
     case 2:
-        killMessage = "('skull_emoji')";
+        killMessage = "way too ez for Better Osiris";
         break;
+    case 3:
+        killMessage = "How did you change your difficulty settings? My CS:GO is stuck on easy";
     }
 
     std::string cmd = "say \"";
