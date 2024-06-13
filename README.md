@@ -1,14 +1,14 @@
 # Osiris And Extra
+###known bugs :
+<P> - hide shots not working (dt is working tho )  </P>
 
-Newest update (05.06.2024) :
-<p> - finished resolver </p>
-<p> - small animfix improvements </p>
-<p> - more flexible base </p>
+## Newest update (12.06.2024) :
+<p> - animfix changes </p>
+<p> - better tickbase </p>
+<p> - small improvements to hitscan </p>
 
 
-No linux support.
-
-# currently the resolver is  finished but the animation fix is bad so if you have any sugestions feel free to create an issue or a pull request. 
+# currently the resolver is  finished but both the animation fix and the resolver are bad so if you have any sugestions feel free to create an issue or a pull request. 
 ![Untitled](https://github.com/finutz/my-custom-osiris/assets/84587349/228cc8d7-0d5c-4c9a-9fcf-11c0a48869d6)
 ### To do:
 <p> - repair gui again </p>
@@ -17,6 +17,11 @@ No linux support.
 <p> - more and better kill messages </p>
 
 ### Older updates :
+
+ 05.06.2024 update :
+<p> - finished resolver </p>
+<p> - small animfix improvements </p>
+<p> - more flexible base </p>
 
 03.06.2024 update:
 <p> - flick up (anti aim) </p>
