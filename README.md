@@ -1,5 +1,5 @@
 # Osiris And Extra
-###known bugs :
+### known bugs :
 <P> - hide shots not working (dt is working tho )  </P>
 
 ## Newest update (12.06.2024) :
