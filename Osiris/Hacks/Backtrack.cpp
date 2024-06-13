@@ -68,7 +68,7 @@ void Backtrack::run(UserCmd* cmd) noexcept
             if (Backtrack::valid(player.backtrackRecords.at(j).simulationTime))
             {
                 for (auto& position : player.backtrackRecords.at(j).positions) {
-                    auto angle = AimbotFunction::calculateRelativeAngle(localPlayerEyePosition, position, cmd->viewangles + aimPunch);
+                    auto angle = hitscan::calculateRelativeAngle(localPlayerEyePosition, position, cmd->viewangles + aimPunch);
                     auto fov = std::hypotf(angle.x, angle.y);
                     if (fov < bestFov) {
                         bestFov = fov;
@@ -140,7 +140,7 @@ bool Backtrack::valid(float simtime) noexcept
     if (simtime < deadTime)
         return false;
 
-    const auto extraTickbaseDelta = Tickbase::canShift(Tickbase::getTargetTickShift()) || Tickbase::getTargetTickShift() ? ticksToTime(Tickbase::getTargetTickShift()) : 0.0f;
+    const auto extraTickbaseDelta = Tickbase::canShiftDT(Tickbase::getTargetTickShift()) || Tickbase::canShiftHS(Tickbase::getTargetTickShift()) ? ticksToTime(Tickbase::getTargetTickShift()) : 0.0f;
     const auto delta = std::clamp(network->getLatency(0) + network->getLatency(1) + getLerp(), 0.f, cvars.maxUnlag->getFloat()) - (memory->globalVars->serverTime() - extraTickbaseDelta - simtime);
     return std::abs(delta) <= 0.2f;
 }

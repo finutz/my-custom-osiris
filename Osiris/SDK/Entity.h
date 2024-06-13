@@ -799,7 +799,7 @@ public:
     }
     float getFlashTimeElapsed() noexcept
     { 
-        return max(memory->globalVars->currenttime - getFlashStartTime(), 0.0f); 
+        return std::max<float>(memory->globalVars->currenttime - getFlashStartTime(), 0.0f);
     }
 
     bool isFlashed() noexcept

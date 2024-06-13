@@ -134,7 +134,7 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                         || !entity->isOtherEnemy(localPlayer.get()) || entity->gunGameImmunity())
                         continue;
 
-                    const auto angle{ AimbotFunction::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles + aimPunch) };
+                    const auto angle{ hitscan::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles + aimPunch) };
                     const auto fov{ angle.length2D() };
                     if (fov < bestFov)
                     {

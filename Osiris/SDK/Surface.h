@@ -6,6 +6,8 @@
 #include "Utils.h"
 #include "VirtualMethod.h"
 
+#include "../Helpers.h"
+
 class Surface {
 public:
     static constexpr unsigned font{ 0x1d }; // builtin font from vgui_spew_fonts
