@@ -4,7 +4,6 @@
 
 ## Newest update (12.06.2024) :
 <p> - animfix changes </p>
-<p> - better tickbase </p>
 <p> - small improvements to hitscan </p>
 
 
