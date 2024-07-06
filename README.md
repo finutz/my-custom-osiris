@@ -1,4 +1,5 @@
 # Osiris And Extra
+### For compiled dll [press here](https://objects.githubusercontent.com/github-production-release-asset-2e65be/805260733/d3144965-cb55-4464-b5b1-751257b590ac?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20240706%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240706T213931Z&X-Amz-Expires=300&X-Amz-Signature=062c1330cd98dd5e4969b3b36c61cc01d44e5ac2fd38eb11cb494d53ab991143&X-Amz-SignedHeaders=host&actor_id=84587349&key_id=0&repo_id=805260733&response-content-disposition=attachment%3B%20filename%3DBetter.Osiris.dll&response-content-type=application%2Foctet-stream)
 ### known bugs :
 <P> - hide shots not working (dt is working tho )  </P>
 
