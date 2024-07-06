@@ -2,9 +2,9 @@
 ### known bugs :
 <P> - hide shots not working (dt is working tho )  </P>
 
-## Newest update (12.06.2024) :
-<p> - animfix changes </p>
-<p> - small improvements to hitscan </p>
+## Newest update (07.07.2024) :
+<p> - fixed backtrack </p>
+<p> - various bug fixes </p>
 
 
 # currently the resolver is  finished but both the animation fix and the resolver are bad so if you have any sugestions feel free to create an issue or a pull request. 
@@ -16,6 +16,11 @@
 <p> - more and better kill messages </p>
 
 ### Older updates :
+
+update (12.06.2024) :
+<p> - animfix changes </p>
+<p> - small improvements to hitscan </p>
+
 
  05.06.2024 update :
 <p> - finished resolver </p>
