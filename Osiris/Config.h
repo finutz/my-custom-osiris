@@ -102,7 +102,10 @@ public:
         KeyBind invert{ std::string("legit aa invert") };
     } legitAntiAim;
 
+
+    bool roll1 = false;
     bool disableInFreezetime{ true };
+
 
     struct Legitbot {
         bool enabled{ false };

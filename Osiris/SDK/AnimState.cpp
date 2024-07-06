@@ -539,7 +539,7 @@ void AnimState::setupMovement() noexcept
     {
         if (!landing && (landedOnGroundThisFrame || stoppedLadderingThisFrame))
         {
-            if(durationInAir > 1.f)
+            if (durationInAir > 1.f)
                 setLayerSequence(ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, ACT_CSGO_LAND_HEAVY);
             else
                 setLayerSequence(ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB, ACT_CSGO_LAND_LIGHT);

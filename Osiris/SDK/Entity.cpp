@@ -40,6 +40,19 @@ bool Entity::canSee(Entity* other, const Vector& pos) noexcept
     return trace.entity == other || trace.fraction > 0.97f;
 }
 
+int Entity::animlayer_count()
+{
+    if (!this) //-V704
+        return 0;
+
+    return 13;
+}
+
+AnimationLayer* Entity::get_animlayers()
+{
+    return *(AnimationLayer**)((DWORD)this + 0x2990);
+}
+
 bool Entity::visibleTo(Entity* other) noexcept
 {
     assert(isAlive());

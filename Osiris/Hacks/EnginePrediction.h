@@ -18,8 +18,9 @@ namespace EnginePrediction
 	void run(UserCmd* cmd) noexcept;
 
 	void store() noexcept;
-    void apply(FrameStage) noexcept;
-    
+	void restore() noexcept;
+	void apply(FrameStage) noexcept;
+
 	int getFlags() noexcept;
 	Vector getVelocity() noexcept;
 	bool isInPrediction() noexcept;
@@ -27,6 +28,7 @@ namespace EnginePrediction
 	struct NetvarData
 	{
 		int tickbase = -1;
+		float spawn_time{};
 
 		Vector aimPunchAngle{ };
 		Vector aimPunchAngleVelocity{ };

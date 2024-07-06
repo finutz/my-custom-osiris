@@ -33,6 +33,7 @@ namespace Helpers
     float approachAngle(float target, float value, float speed) noexcept;
     float remapValClamped(float val, float A, float B, float C, float D) noexcept;
     float normalizeYaw(float yaw) noexcept;
+    float normalize_pitch(float pitch);
 
     bool worldToScreen(const Vector& in, ImVec2& out, bool floor = false) noexcept;
 
@@ -79,6 +80,11 @@ namespace Helpers
     
     bool decodeVFONT(std::vector<char>& buffer) noexcept;
     std::vector<char> loadBinaryFile(const std::string& path) noexcept;
+
+    //custom (pasted)
+    bool IsNearEqual(float v1, float v2, float Tolerance);
+    Vector calculate_angle(const Vector& src, const Vector& dst);
+    //lol
 
     constexpr auto deg2rad(float degrees) noexcept { return degrees * (std::numbers::pi_v<float> / 180.0f); }
     constexpr auto rad2deg(float radians) noexcept { return radians * (180.0f / std::numbers::pi_v<float>); }

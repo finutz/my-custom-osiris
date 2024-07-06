@@ -380,7 +380,7 @@ static bool __stdcall createMove(float inputSampleTime, UserCmd* cmd, bool& send
     Triggerbot::run(cmd);
     Ragebot::run(cmd);
     Knifebot::run(cmd);
-    Tickbase::end(cmd, sendPacket);
+    Tickbase::end(cmd);
 
     Misc::autoPeek(cmd, currentViewAngles);
     Misc::autoPixelSurf(cmd);

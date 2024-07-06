@@ -571,6 +571,10 @@ public:
         getPlayerName(name);
         return name;
     }
+    
+    int animlayer_count();
+
+    AnimationLayer* get_animlayers();
 
     bool canSee(Entity* other, const Vector& pos) noexcept;
     bool visibleTo(Entity* other) noexcept;
@@ -712,7 +716,9 @@ public:
     NETVAR(getLadderNormal, "CBasePlayer", "m_vecLadderNormal", Vector)
     NETVAR(duckAmount, "CBasePlayer", "m_flDuckAmount", float)
     NETVAR(duckSpeed, "CBasePlayer", "m_flDuckSpeed", float)
+    NETVAR(m_vecVelocity, "CBasePlayer", "m_vecVelocity[0]", Vector);
     NETVAR(fallVelocity, "CBasePlayer", "m_flFallVelocity", float)
+    NETVAR(m_fLastShotTime, "CWeaponCSBase", "m_fLastShotTime", float)
 
     NETVAR(armor, "CCSPlayer", "m_ArmorValue", int)
     NETVAR(hasHeavyArmor, "CCSPlayer", "m_bHasHeavyArmor", bool)

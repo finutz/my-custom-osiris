@@ -147,6 +147,19 @@ struct Vector {
         return v;
     }
 
+    Vector Normalized() const
+    {
+        Vector res = *this;
+        float l = res.lengthFloat();
+
+        if (l)  //-V550
+            res /= l;
+        else
+            res.x = res.y = res.z = 0.0f;
+
+        return res;
+    }
+
     Vector clamp() noexcept
     {
         this->x = std::clamp(this->x, -89.f, 89.f);
@@ -165,7 +178,12 @@ struct Vector {
 
     auto length() const noexcept
     {
-        return std::sqrt(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
+    }
+
+    float lengthFloat() const //for preventing errors cause of the auto (use when needed)
+    {
+        return sqrt(x * x + y * y + z * z);
     }
 
     auto length2D() const noexcept

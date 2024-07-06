@@ -13,8 +13,13 @@
 #include "Helpers.h"
 #include "Memory.h"
 
+#include "SDK/UserCmd.h"
+//#include"Interfaces.h"
+
 #include "SDK/GlobalVars.h"
 #include "SDK/Engine.h"
+
+#define M_RADPI 57.295779513082f //lol
 
 std::array<float, 3U> Helpers::rgbToHsv(float r, float g, float b) noexcept
 {
@@ -88,6 +93,22 @@ static auto rainbowColor(float time, float speed, float alpha) noexcept
                        std::sin(speed * time + 2 * pi / 3) * 0.5f + 0.5f,
                        std::sin(speed * time + 4 * pi / 3) * 0.5f + 0.5f,
                        alpha };
+}
+
+Vector Helpers::calculate_angle(const Vector& src, const Vector& dst) {
+    Vector angles;
+
+    Vector delta = src - dst;
+    float hyp = delta.length2D();
+
+    angles.y = std::atanf(delta.y / delta.x) * M_RADPI;
+    angles.x = std::atanf(-delta.z / hyp) * -M_RADPI;
+    angles.z = 0.0f;
+
+    if (delta.x >= 0.0f)
+        angles.y += 180.0f;
+
+    return angles;
 }
 
 void Helpers::logConsole(std::string_view msg, const std::array<std::uint8_t, 4> color) noexcept
@@ -354,6 +375,17 @@ float Helpers::normalizeYaw(float yaw) noexcept
     return yaw;
 }
 
+float Helpers::normalize_pitch(float pitch)
+{
+    while (pitch > 89.0f)
+        pitch -= 180.0f;
+
+    while (pitch < -89.0f)
+        pitch += 180.0f;
+
+    return pitch;
+}
+
 bool Helpers::worldToScreen(const Vector& in, ImVec2& out, bool floor) noexcept
 {
     const auto& matrix = GameData::toScreenMatrix();
@@ -505,3 +537,8 @@ std::vector<char> Helpers::loadBinaryFile(const std::string& path) noexcept
     in.read(result.data(), result.size());
     return result;
 }
+
+bool Helpers::IsNearEqual(float v1, float v2, float Tolerance)
+{
+    return std::abs(v1 - v2) <= std::abs(Tolerance);
+};
