@@ -64,31 +64,30 @@ GUI::GUI() noexcept
     ImFontConfig cfg;
     cfg.SizePixels = 15.0f;
 
-    if (PWSTR pathToFonts; SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Fonts, 0, nullptr, &pathToFonts))) {
-        const std::filesystem::path path{ pathToFonts };
-        CoTaskMemFree(pathToFonts);
+     if (PWSTR pathToFonts; SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Fonts, 0, nullptr, &pathToFonts))) {
+     const std::filesystem::path path{ pathToFonts };
+     CoTaskMemFree(pathToFonts);
 
-        fonts.normal15px = io.Fonts->AddFontFromFileTTF((path / "dengl.ttf").string().c_str(), 15.0f, &cfg, Helpers::getFontGlyphRanges());
-        if (!fonts.normal15px)
-            io.Fonts->AddFontDefault(&cfg);
+     fonts.normal15px = io.Fonts->AddFontFromFileTTF((path / "tahoma.ttf").string().c_str(), 15.0f, &cfg, Helpers::getFontGlyphRanges());
+     if (!fonts.normal15px)
+         io.Fonts->AddFontDefault(&cfg);
 
-        fonts.tahoma34 = io.Fonts->AddFontFromFileTTF((path / "dengl.ttf").string().c_str(), 34.0f, &cfg, Helpers::getFontGlyphRanges());
-        if (!fonts.tahoma34)
-            io.Fonts->AddFontDefault(&cfg);
+     fonts.tahoma34 = io.Fonts->AddFontFromFileTTF((path / "tahoma.ttf").string().c_str(), 34.0f, &cfg, Helpers::getFontGlyphRanges());
+     if (!fonts.tahoma34)
+         io.Fonts->AddFontDefault(&cfg);
 
-        fonts.tahoma28 = io.Fonts->AddFontFromFileTTF((path / "tahomabd.ttf").string().c_str(), 28.0f, &cfg, Helpers::getFontGlyphRanges());
-        if (!fonts.tahoma28)
-            io.Fonts->AddFontDefault(&cfg);
+     fonts.tahoma28 = io.Fonts->AddFontFromFileTTF((path / "tahomabd.ttf").string().c_str(), 28.0f, &cfg, Helpers::getFontGlyphRanges());
+     if (!fonts.tahoma28) 
 
-        cfg.MergeMode = true;
-        static constexpr ImWchar symbol[]{
-            0x2605, 0x2605, // ★
-            0
-        };
-        io.Fonts->AddFontFromFileTTF((path / "seguisym.ttf").string().c_str(), 15.0f, &cfg, symbol);
-        cfg.MergeMode = false;
-    }
-
+     cfg.MergeMode = true;
+     static constexpr ImWchar symbol[]{
+         0x2605, 0x2605, // ★
+         0
+     };
+     io.Fonts->AddFontFromFileTTF((path / "seguisym.ttf").string().c_str(), 15.0f, &cfg, symbol);
+     cfg.MergeMode = false;
+ }
+    
     if (!fonts.normal15px)
         io.Fonts->AddFontDefault(&cfg);
     if (!fonts.tahoma28)
