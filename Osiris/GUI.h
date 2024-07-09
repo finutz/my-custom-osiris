@@ -23,7 +23,7 @@ private:
     void renderFakelagWindow() noexcept;
     void renderLegitAntiAimWindow() noexcept;
     void renderRageAntiAimWindow() noexcept;
-    void renderFakeAngleWindow() noexcept;
+    void renderDefensiveWindow() noexcept;
     void renderBacktrackWindow() noexcept;
     void renderChamsWindow() noexcept;
     void renderGlowWindow() noexcept;
