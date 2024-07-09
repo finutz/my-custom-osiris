@@ -1,22 +1,29 @@
 # Osiris And Extra
-### For compiled dll [press here](https://objects.githubusercontent.com/github-production-release-asset-2e65be/805260733/d3144965-cb55-4464-b5b1-751257b590ac?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20240706%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240706T213931Z&X-Amz-Expires=300&X-Amz-Signature=062c1330cd98dd5e4969b3b36c61cc01d44e5ac2fd38eb11cb494d53ab991143&X-Amz-SignedHeaders=host&actor_id=84587349&key_id=0&repo_id=805260733&response-content-disposition=attachment%3B%20filename%3DBetter.Osiris.dll&response-content-type=application%2Foctet-stream)
+### For compiled dll [press here](https://objects.githubusercontent.com/github-production-release-asset-2e65be/805260733/d3144965-cb55-4464-b5b1-751257b590ac?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=releaseassetproduction%2F20240706%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240706T213931Z&X-Amz-Expires=300&X-Amz-Signature=062c1330cd98dd5e4969b3b36c61cc01d44e5ac2fd38eb11cb494d53ab991143&X-Amz-SignedHeaders=host&actor_id=84587349&key_id=0&repo_id=805260733&response-content-disposition=attachment%3B%20filename%3DBetter.Osiris.dll&response-content-type=application%2Foctet-stream) (04.09.2024 version)
 ### known bugs :
 <P> - hide shots not working (dt is working tho )  </P>
 
-## Newest update (07.07.2024) :
-<p> - fixed backtrack </p>
-<p> - various bug fixes </p>
+## Newest update (09.07.2024) :
+<p> - fixed gui </p>
+<p> - improoved resolver by mol (molxxt) </p>
 
 
-# currently the resolver is  finished but both the animation fix and the resolver are bad so if you have any sugestions feel free to create an issue or a pull request. 
-![Untitled](https://github.com/finutz/my-custom-osiris/assets/84587349/228cc8d7-0d5c-4c9a-9fcf-11c0a48869d6)
+![image](https://github.com/finutz/my-custom-osiris/assets/84587349/d5cf801b-65bd-4dd1-bf0f-ed668a2b9765)
+
+
 ### To do:
-<p> - repair gui again </p>
 <p> - improve animfix (big improvements needed </p>
 <p> - custom clantags </p>
+<p> - improve ragebot </p>
+<p> - add defensive anti aim </p>
+<p> - improve current anti aim </p>
 <p> - more and better kill messages </p>
 
 ### Older updates :
+
+update (07.07.2024) :
+<p> - fixed backtrack </p>
+<p> - various bug fixes </p>
 
 update (12.06.2024) :
 <p> - animfix changes </p>
