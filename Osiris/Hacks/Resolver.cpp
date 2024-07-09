@@ -239,18 +239,27 @@ void Resolver::getEvent(GameEvent* event) noexcept
         snapshots.clear();
 }
 
-Vector calcAngle(Vector source, Vector entityPos) {
-    Vector delta = {};
-    delta.x = source.x - entityPos.x;
-    delta.y = source.y - entityPos.y;
-    delta.z = source.z - entityPos.z;
-    Vector angles = {};
-    Vector viewangles = cmd->viewangles;
-    angles.x = Helpers::rad2deg(atan(delta.z / hypot(delta.x, delta.y))) - viewangles.x;
-    angles.y = Helpers::rad2deg(atan(delta.y / delta.x)) - viewangles.y;
-    angles.z = 0;
-    if (delta.x >= 0.f)
-        angles.y += 180;
+Vector calcAngle(const Vector& source, const Vector& entityPos) {
+    // Calculate the delta vector
+    const Vector delta = { source.x - entityPos.x, source.y - entityPos.y, source.z - entityPos.z };
+
+    // Calculate the angles
+    Vector angles;
+    const auto viewangles = cmd->viewangles;
+
+    // Calculate the pitch (x) angle
+    angles.x = Helpers::rad2deg(std::atan2(delta.z, std::hypot(delta.x, delta.y))) - viewangles.x;
+
+    // Calculate the yaw (y) angle
+    angles.y = Helpers::rad2deg(std::atan2(delta.y, delta.x)) - viewangles.y;
+
+    // Ensure the yaw angle is correctly adjusted for quadrants
+    if (delta.x >= 0.0f) {
+        angles.y += 180.0f;
+    }
+
+    // Set the roll (z) angle to zero
+    angles.z = 0.0f;
 
     return angles;
 }
@@ -644,27 +653,41 @@ static auto resolve_update_animations(Entity* entity)
     Resolver::updating_animation = false;
 };
 bool Resolver::DoesHaveJitter(Entity* player) {
-
-    if (!player->isAlive())
+    // Early exits for invalid conditions
+    if (!player || !player->isAlive() || !player->isDormant())
         return false;
 
-    if (!player->isDormant())
-        return false;
-
+    // Update animations for the player
     resolve_update_animations(player);
 
-    static float LastAngle[64];
-    static int LastBrute[64];
-    static bool Switch[64];
-    static float LastUpdateTime[64];
+    // Constants for array sizes and thresholds
+    constexpr int MaxPlayers = 64;
+    constexpr float MaxDesyncDeltaMargin = 4.0f;
+    constexpr int JitterCheckTicks = 15;
 
+    // Static arrays to keep track of state
+    static float LastAngle[MaxPlayers] = { 0.0f };
+    static int LastBrute[MaxPlayers] = { 0 };
+    static bool Switch[MaxPlayers] = { false };
+    static float LastUpdateTime[MaxPlayers] = { 0.0f };
+
+    // Get player index
     int i = player->index();
 
-    auto simulationtime = player->simulationTime();
-    auto OLDsimulationtime = player->simulationTime() + 4;
+    // Check for valid index range
+    if (i < 0 || i >= MaxPlayers)
+        return false;
 
-    float CurrentAngle = player->eyeAngles().y;
-    if (!Helpers::IsNearEqual(CurrentAngle, LastAngle[i], (max_desync_delta(player) - 4.f))) {
+    // Get current and old simulation times
+    const float simulationTime = player->simulationTime();
+    const float OLDsimulationTime = simulationTime + 4.0f;
+
+    // Get the player's current eye angle
+    const float CurrentAngle = player->eyeAngles().y;
+
+    // Check if the current angle is significantly different from the last angle
+    if (!Helpers::IsNearEqual(CurrentAngle, LastAngle[i], max_desync_delta(player) - MaxDesyncDeltaMargin)) {
+        // Toggle the switch and update state
         Switch[i] = !Switch[i];
         LastAngle[i] = CurrentAngle;
         jitter_side = Switch[i] ? 1 : -1;
@@ -673,12 +696,17 @@ bool Resolver::DoesHaveJitter(Entity* player) {
         return true;
     }
     else {
-        if (fabsf(LastUpdateTime[i] - memory->globalVars->currenttime >= TICKS_TO_TIME(15))
-            || simulationtime != OLDsimulationtime) {
+        // Check if sufficient time has passed or if the simulation time has changed
+        const float currentTime = memory->globalVars->currenttime;
+        if (std::fabs(LastUpdateTime[i] - currentTime) >= TICKS_TO_TIME(JitterCheckTicks) ||
+            simulationTime != OLDsimulationTime) {
             LastAngle[i] = CurrentAngle;
         }
+        // Set jitter_side to the last brute force value
         jitter_side = LastBrute[i];
     }
+
+    // No jitter detected
     return false;
 }
 
@@ -1021,45 +1049,33 @@ __forceinline constexpr float rad_to_deg(float val) {
     return val * (180.f / pi);
 }
 void Resolver::ResolveAir1(adjust_data* data, Entity* entity) {
-    // for no-spread call a seperate resolver.
-   // if (g_menu.main.config.mode.get() == 1) {
-  //      AirNS(data, record);
-  //      return;
-  //  }
-
-    // else run our matchmaking air resolver.
-
-    // we have barely any speed. 
-    // either we jumped in place or we just left the ground.
-    // or someone is trying to fool our resolver.
-    if (entity->velocity().length2D() < 60.f) {
-        // set this for completion.
-        // so the shot parsing wont pick the hits / misses up.
-        // and process them wrongly.
+    // Check if the entity is valid and has minimal velocity.
+    if (!entity || entity->velocity().length2D() < 60.0f) {
+        // Set the mode to standing resolution for proper shot processing.
         m_mode = Modes::RESOLVE_STAND;
 
-        // invoke our stand resolver.
-        ResolveStand(); // later resolvestand 1
+        // Invoke the stand resolver.
+        ResolveStand();
 
-        // we are done.
+        // Exit the function as further processing is not required.
         return;
     }
 
-    // try to predict the direction of the player based on his velocity direction.
-    // this should be a rough estimation of where he is looking.
-    float velyaw = rad_to_deg(std::atan2(data->m_velocity.y, data->m_velocity.x));
+    // Predict the direction the player is facing based on their velocity.
+    const float velyaw = rad_to_deg(std::atan2(data->m_velocity.y, data->m_velocity.x));
 
+    // Adjust the player's eye angles based on the shot count modulo 3.
     switch (data->m_shots % 3) {
     case 0:
-        entity->eyeAngles().y = velyaw + 180.f;
+        entity->eyeAngles().y = velyaw + 180.0f;
         break;
 
     case 1:
-        entity->eyeAngles().y = velyaw - 90.f;
+        entity->eyeAngles().y = velyaw - 90.0f;
         break;
 
     case 2:
-        entity->eyeAngles().y = velyaw + 90.f;
+        entity->eyeAngles().y = velyaw + 90.0f;
         break;
     }
 }
@@ -1716,10 +1732,10 @@ float Resolver::resolve_shot(const Animations::Players& player, Entity* entity)
             build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y));
             break;
         case ROTATION_SIDE_LEFT:
-            build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y + 60.f));
+            build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y + 58.f));
             break;
         case ROTATION_SIDE_RIGHT:
-            build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y - 60.f));
+            build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y - 58.f));
             break;
         case ROTATION_SIDE_LOW_LEFT:
             build_server_abs_yaw(entity, Helpers::angleNormalize(entity->eyeAngles().y + 30.f));
