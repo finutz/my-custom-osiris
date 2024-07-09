@@ -35,13 +35,15 @@
 #include "../SDK/ViewRenderBeams.h"
 #include "../SDK/ViewSetup.h"
 
+#include "../GUI.h"
+
 void Visuals::shadowChanger() noexcept
 {
     static auto cl_csm_rot_override = interfaces->cvar->findVar("cl_csm_rot_override");
     static auto cl_csm_max_shadow_dist = interfaces->cvar->findVar("cl_csm_max_shadow_dist");
     static auto cl_csm_rot_x = interfaces->cvar->findVar("cl_csm_rot_x");
     static auto cl_csm_rot_y = interfaces->cvar->findVar("cl_csm_rot_y");
-    
+
     if (config->visuals.noShadows || !config->visuals.shadowsChanger.enabled)
     {
         cl_csm_rot_override->setValue(0);
@@ -54,7 +56,7 @@ void Visuals::shadowChanger() noexcept
     cl_csm_rot_y->setValue(config->visuals.shadowsChanger.y);
 }
 
-#define SMOKEGRENADE_LIFETIME 17.5f
+#define SMOKEGRENADE_LIFETIME 17.85f
 
 struct smokeData
 {
@@ -76,7 +78,6 @@ void Visuals::drawSmokeTimerEvent(GameEvent* event) noexcept
     data.pos = pos;
     smokes.push_back(data);
 }
-
 void Visuals::drawSmokeTimer(ImDrawList* drawList) noexcept
 {
     if (!config->visuals.smokeTimer)
@@ -89,28 +90,25 @@ void Visuals::drawSmokeTimer(ImDrawList* drawList) noexcept
         const auto& smoke = smokes[i];
 
         auto time = smoke.destructionTime - memory->globalVars->realtime;
-        std::ostringstream text; text << std::fixed << std::showpoint << std::setprecision(1) << time << " sec.";
-        auto textSize = ImGui::CalcTextSize(text.str().c_str());
+        std::ostringstream text; text << "y";
 
         ImVec2 pos;
 
         if (time >= 0.0f) {
             if (Helpers::worldToScreen(smoke.pos, pos)) {
-                ImRect rect_out(
-                    pos.x + (textSize.x / 2) + 2.f,
-                    pos.y + (textSize.y / 2) + 10.f,
-                    pos.x - (textSize.x / 2) - 2.f,
-                    pos.y - (textSize.y / 2) - 2.f);
+                const auto radius = 20.f;
+                const auto fraction = std::clamp(time / SMOKEGRENADE_LIFETIME, 0.0f, 1.0f);
 
-                ImRect rect_in(
-                    (pos.x + (textSize.x / 2)) - (textSize.x * (1.0f - (time / SMOKEGRENADE_LIFETIME))),
-                    pos.y + (textSize.y / 2),
-                    pos.x - (textSize.x / 2),
-                    pos.y + (textSize.y));
-
-                drawList->AddRectFilled(rect_out.Min, rect_out.Max, Helpers::calculateColor(config->visuals.smokeTimerBG));
-                drawList->AddRectFilled(rect_in.Min, rect_in.Max, Helpers::calculateColor(config->visuals.smokeTimerTimer));
-                drawList->AddText({ pos.x - (textSize.x / 2), pos.y - (textSize.y / 2) }, Helpers::calculateColor(config->visuals.smokeTimerText), text.str().c_str());
+                drawList->AddCircleFilled(pos, radius, Helpers::calculateColor(config->visuals.smokeTimerBG), 40);
+                constexpr float pi = std::numbers::pi_v<float>;
+                const auto arc270 = (3 * pi) / 2;
+                drawList->PathArcTo(pos, radius, arc270 - (2 * pi * fraction), arc270, 40);
+                drawList->PathStroke(Helpers::calculateColor(config->visuals.smokeTimerTimer), false, 2.45f);
+                ImGui::PushFont(gui->grenades());
+                auto textSize = ImGui::CalcTextSize(text.str().c_str());
+                //drawList->AddText(gui->grenades(), 19.5f, ImVec2{ pos.x - (textSize.x / 2) - 8.80f, pos.y - (textSize.y / 2) - 1.f }, Helpers::calculateColor(config->visuals.smokeTimerText), text.str().c_str());
+                drawList->AddText(gui->grenades(), 20.f, ImVec2{ pos.x - (textSize.x / 2) + 0.75f, pos.y - (textSize.y / 2) - 0.5f }, Helpers::calculateColor(config->visuals.smokeTimerText), text.str().c_str());
+                ImGui::PopFont();
             }
         }
         else
@@ -118,7 +116,7 @@ void Visuals::drawSmokeTimer(ImDrawList* drawList) noexcept
     }
 }
 
-#define MOLOTOV_LIFETIME 7.0f
+#define MOLOTOV_LIFETIME 7.2f
 
 struct molotovData
 {
@@ -164,28 +162,23 @@ void Visuals::drawMolotovTimer(ImDrawList* drawList) noexcept
         const auto& molotov = molotovs[i];
 
         auto time = molotov.destructionTime - memory->globalVars->realtime;
-        std::ostringstream text; text << std::fixed << std::showpoint << std::setprecision(1) << time << " sec.";
+        std::ostringstream text; text << "z";
+        ImGui::PushFont(gui->grenades());
         auto textSize = ImGui::CalcTextSize(text.str().c_str());
-
+        ImGui::PopFont();
         ImVec2 pos;
 
         if (time >= 0.0f) {
             if (Helpers::worldToScreen(molotov.pos, pos)) {
-                ImRect rect_out(
-                    pos.x + (textSize.x / 2) + 2.f,
-                    pos.y + (textSize.y / 2) + 10.f,
-                    pos.x - (textSize.x / 2) - 2.f,
-                    pos.y - (textSize.y / 2) - 2.f);
+                const auto radius = 20.0f;
+                const auto fraction = std::clamp(time / MOLOTOV_LIFETIME, 0.0f, 1.0f);
 
-                ImRect rect_in(
-                    (pos.x + (textSize.x / 2)) - (textSize.x * (1.0f - (time / MOLOTOV_LIFETIME))),
-                    pos.y + (textSize.y / 2),
-                    pos.x - (textSize.x / 2),
-                    pos.y + (textSize.y));
-
-                drawList->AddRectFilled(rect_out.Min, rect_out.Max, Helpers::calculateColor(config->visuals.molotovTimerBG));
-                drawList->AddRectFilled(rect_in.Min, rect_in.Max, Helpers::calculateColor(config->visuals.molotovTimerTimer));
-                drawList->AddText({ pos.x - (textSize.x / 2), pos.y - (textSize.y / 2) }, Helpers::calculateColor(config->visuals.molotovTimerText), text.str().c_str());
+                drawList->AddCircleFilled(pos, radius + 1.f, Helpers::calculateColor(config->visuals.molotovTimerBG), 40);
+                constexpr float pi = std::numbers::pi_v<float>;
+                const auto arc270 = (3 * pi) / 2;
+                drawList->PathArcTo(pos, radius, arc270 - (2 * pi * fraction), arc270, 40);
+                drawList->PathStroke(Helpers::calculateColor(config->visuals.molotovTimerTimer), false, 2.45f);
+                drawList->AddText(gui->grenades(), 20.f, ImVec2{ pos.x - (textSize.x / 2) + 1.25f, pos.y - (textSize.y / 2) - 0.60f }, Helpers::calculateColor(config->visuals.molotovTimerText), text.str().c_str());
             }
         }
     }
@@ -257,7 +250,7 @@ void Visuals::drawAimbotFov(ImDrawList* drawList) noexcept
     if (ImVec2 pos; Helpers::worldToScreen(local.aimPunch, pos))
     {
         const auto& displaySize = ImGui::GetIO().DisplaySize;
-        const auto radius = std::tan(Helpers::deg2rad(cfg[weaponIndex].fov) / (16.0f/6.0f)) / std::tan(Helpers::deg2rad(localPlayer->isScoped() ? localPlayer->fov() : (config->visuals.fov + 90.0f)) / 2.0f) * displaySize.x;
+        const auto radius = std::tan(Helpers::deg2rad(cfg[weaponIndex].fov) / (16.0f / 6.0f)) / std::tan(Helpers::deg2rad(localPlayer->isScoped() ? localPlayer->fov() : (config->visuals.fov + 90.0f)) / 2.0f) * displaySize.x;
         if (radius > displaySize.x || radius > displaySize.y || !std::isfinite(radius))
             return;
 
@@ -310,7 +303,7 @@ void Visuals::playerModel(FrameStage stage) noexcept
         "models/player/custom_player/legacy/tm_phoenix_variantf.mdl",
         "models/player/custom_player/legacy/tm_phoenix_variantg.mdl",
         "models/player/custom_player/legacy/tm_phoenix_varianth.mdl",
-        
+
         "models/player/custom_player/legacy/tm_pirate.mdl",
         "models/player/custom_player/legacy/tm_pirate_varianta.mdl",
         "models/player/custom_player/legacy/tm_pirate_variantb.mdl",
@@ -361,29 +354,29 @@ void Visuals::playerModel(FrameStage stage) noexcept
         case Team::CT: return static_cast<std::size_t>(config->visuals.playerModelCT - 1) < models.size() ? models[config->visuals.playerModelCT - 1] : nullptr;
         default: return nullptr;
         }
-    };
+        };
 
     auto isValidModel = [](std::string name) noexcept -> bool
-    {
-        if (name.empty() || name.front() == ' ' || name.back() == ' ' || !name.ends_with(".mdl"))
+        {
+            if (name.empty() || name.front() == ' ' || name.back() == ' ' || !name.ends_with(".mdl"))
+                return false;
+
+            if (!name.starts_with("models") && !name.starts_with("/models") && !name.starts_with("\\models"))
+                return false;
+
+            //Check if file exists within directory
+            std::string path = interfaces->engine->getGameDirectory();
+            if (config->visuals.playerModel[0] != '\\' && config->visuals.playerModel[0] != '/')
+                path += "/";
+            path += config->visuals.playerModel;
+
+            struct stat buf;
+            if (stat(path.c_str(), &buf) != -1)
+                return true;
+
             return false;
+        };
 
-        if (!name.starts_with("models") && !name.starts_with("/models") && !name.starts_with("\\models"))
-            return false;
-
-        //Check if file exists within directory
-        std::string path = interfaces->engine->getGameDirectory();
-        if (config->visuals.playerModel[0] != '\\' && config->visuals.playerModel[0] != '/')
-            path += "/";
-        path += config->visuals.playerModel;
-
-        struct stat buf;
-        if (stat(path.c_str(), &buf) != -1)
-            return true;
-
-        return false;
-    };
-    
     const bool custom = isValidModel(static_cast<std::string>(config->visuals.playerModel));
 
     if (const auto model = custom ? config->visuals.playerModel : getModel(localPlayer->getTeamNumber())) {
@@ -451,11 +444,11 @@ void Visuals::modifyMolotov(FrameStage stage) noexcept
         "particle/fire_explosion_1/fire_explosion_1_oriented.vmt",
         "particle/vistasmokev1/vistasmokev1_nearcull_nodepth.vmt"
     };
-    
+
     for (const auto mat : fireMaterials) {
         const auto material = interfaces->materialSystem->findMaterial(mat);
         material->setMaterialVarFlag(MaterialVarFlag::NO_DRAW, stage == FrameStage::RENDER_START && config->visuals.noMolotov);
-        material->setMaterialVarFlag(MaterialVarFlag::WIREFRAME, stage == FrameStage::RENDER_START && config->visuals.wireframeMolotov);        
+        material->setMaterialVarFlag(MaterialVarFlag::WIREFRAME, stage == FrameStage::RENDER_START && config->visuals.wireframeMolotov);
     }
 }
 
@@ -497,7 +490,8 @@ void Visuals::removeVisualRecoil(FrameStage stage) noexcept
         if (config->visuals.noViewPunch)
             localPlayer->viewPunchAngle() = Vector{ };
 
-    } else if (stage == FrameStage::RENDER_END) {
+    }
+    else if (stage == FrameStage::RENDER_END) {
         localPlayer->aimPunchAngle() = aimPunch;
         localPlayer->viewPunchAngle() = viewPunch;
     }
@@ -523,11 +517,11 @@ void Visuals::removeGrass(FrameStage stage) noexcept
         case fnv::hash("dz_sirocco"): return "detail/dust_massive_detail_sprites";
         case fnv::hash("coop_autumn"): return "detail/autumn_detail_sprites";
         case fnv::hash("dz_frostbite"): return "ski/detail/detailsprites_overgrown_ski";
-        // dz_junglety has been removed in 7/23/2020 patch
-        // case fnv::hash("dz_junglety"): return "detail/tropical_grass";
+            // dz_junglety has been removed in 7/23/2020 patch
+            // case fnv::hash("dz_junglety"): return "detail/tropical_grass";
         default: return nullptr;
         }
-    };
+        };
 
     if (const auto grassMaterialName = getGrassMaterialName())
         interfaces->materialSystem->findMaterial(grassMaterialName)->setMaterialVarFlag(MaterialVarFlag::NO_DRAW, stage == FrameStage::RENDER_START && config->visuals.noGrass);
@@ -590,7 +584,7 @@ void Visuals::applyScreenEffects() noexcept
         if (config->visuals.screenEffect <= 2 || static_cast<std::size_t>(config->visuals.screenEffect - 2) >= effects.size())
             return effects[0];
         return effects[config->visuals.screenEffect - 2];
-    }());
+        }());
 
     if (config->visuals.screenEffect == 1)
         material->findVar("$c0_x")->setValue(0.0f);
@@ -624,9 +618,9 @@ void Visuals::hitEffect(GameEvent* event) noexcept
                 if (config->visuals.hitEffect <= 2)
                     return effects[0];
                 return effects[config->visuals.hitEffect - 2];
-            };
+                };
 
-           
+
             auto material = interfaces->materialSystem->findMaterial(getEffectMaterial());
             if (config->visuals.hitEffect == 1)
                 material->findVar("$c0_x")->setValue(0.0f);
@@ -745,7 +739,7 @@ void Visuals::hitMarker(GameEvent* event, ImDrawList* drawList) noexcept
 
     switch (config->visuals.hitMarker) {
     case 1:
-        const auto& mid = ImGui::GetIO().DisplaySize / 2.0f;
+        const auto & mid = ImGui::GetIO().DisplaySize / 2.0f;
         auto color = IM_COL32(255, 255, 255, static_cast<int>(Helpers::lerp(fabsf(lastHitTime + config->visuals.hitMarkerTime - memory->globalVars->realtime) / config->visuals.hitMarkerTime + FLT_EPSILON, 0.0f, 255.0f)));
         drawList->AddLine({ mid.x - 10, mid.y - 10 }, { mid.x - 4, mid.y - 4 }, color);
         drawList->AddLine({ mid.x + 10.5f, mid.y - 10.5f }, { mid.x + 4.5f, mid.y - 4.5f }, color);
@@ -944,9 +938,11 @@ void Visuals::skybox(FrameStage stage) noexcept
 
     if (stage == FrameStage::RENDER_START && config->visuals.skybox > 0 && static_cast<std::size_t>(config->visuals.skybox) < skyboxList.size() - 1) {
         memory->loadSky(skyboxList[config->visuals.skybox]);
-    } else if (config->visuals.skybox == 26 && stage == FrameStage::RENDER_START) {
+    }
+    else if (config->visuals.skybox == 26 && stage == FrameStage::RENDER_START) {
         memory->loadSky(config->visuals.customSkybox.c_str());
-    } else {
+    }
+    else {
         static const auto sv_skyname = interfaces->cvar->findVar("sv_skyname");
         memory->loadSky(sv_skyname->string);
     }
@@ -1023,7 +1019,7 @@ void Visuals::footstepESP(GameEvent* event) noexcept
     "sprites/purplelaser1",
     "sprites/white.vmt", <-- draws behind the wall
     */
-    
+
     const auto modelIndex = interfaces->modelInfo->getModelIndex("sprites/purplelaser1.vmt");
 
     BeamInfo info;
@@ -1071,7 +1067,7 @@ void Visuals::bulletTracer(GameEvent& event) noexcept
     switch (fnv::hashRuntime(event.getName())) {
     case fnv::hash("round_start"):
         shotRecord.clear();
-            break;
+        break;
     case fnv::hash("weapon_fire"):
         if (event.getInt("userid") != localPlayer->getUserId())
             return;
@@ -1113,7 +1109,7 @@ void Visuals::bulletTracer(GameEvent& event) noexcept
         "sprites/radio",
         "sprites/white",
         */
-        
+
         beamInfo.modelName = "sprites/purplelaser1.vmt";
         beamInfo.modelIndex = -1;
         beamInfo.haloName = nullptr;
@@ -1273,7 +1269,7 @@ void Visuals::drawMolotovHull(ImDrawList* drawList) noexcept
                                 0.0f };
         }
         return points;
-    }();
+        }();
 
     for (const auto& molotov : GameData::infernos()) {
         for (const auto& pos : molotov.points) {
@@ -1292,7 +1288,7 @@ void Visuals::drawMolotovHull(ImDrawList* drawList) noexcept
 
             constexpr auto orientation = [](const ImVec2& a, const ImVec2& b, const ImVec2& c) {
                 return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-            };
+                };
 
             std::sort(screenPoints.begin() + 1, screenPoints.begin() + count, [&](const auto& a, const auto& b) { return orientation(screenPoints[0], a, b) > 0.0f; });
             drawList->AddConvexPolyFilled(screenPoints.data(), count, color);
@@ -1314,11 +1310,11 @@ void Visuals::drawSmokeHull(ImDrawList* drawList) noexcept
         for (std::size_t i = 0; i < points.size(); ++i) {
             constexpr auto smokeRadius = 150.0f; // https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/server/cstrike15/Effects/inferno.cpp#L889
             points[i] = Vector{ smokeRadius * std::cos(Helpers::deg2rad(i * (360.0f / points.size()))),
-                                smokeRadius* std::sin(Helpers::deg2rad(i * (360.0f / points.size()))),
+                                smokeRadius * std::sin(Helpers::deg2rad(i * (360.0f / points.size()))),
                                 0.0f };
         }
         return points;
-    }();
+        }();
 
     for (const auto& smoke : GameData::smokes())
     {
@@ -1337,9 +1333,9 @@ void Visuals::drawSmokeHull(ImDrawList* drawList) noexcept
         std::swap(screenPoints[0], *std::min_element(screenPoints.begin(), screenPoints.begin() + count, [](const auto& a, const auto& b) { return a.y < b.y || (a.y == b.y && a.x < b.x); }));
 
         constexpr auto orientation = [](const ImVec2& a, const ImVec2& b, const ImVec2& c)
-        {
-            return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-        };
+            {
+                return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+            };
 
         std::sort(screenPoints.begin() + 1, screenPoints.begin() + count, [&](const auto& a, const auto& b) { return orientation(screenPoints[0], a, b) > 0.0f; });
         drawList->AddConvexPolyFilled(screenPoints.data(), count, color);
@@ -1404,24 +1400,24 @@ void Visuals::drawMolotovPolygon(ImDrawList* drawList) noexcept
 
     /* add the inferno position with largest possible inferno width so it's showing accurate radius. */
     auto flameCircumference = [](std::vector<Vector> points)
-    {
-        std::vector<Vector> new_points;
-
-        for (size_t i = 0; i < points.size(); ++i)
         {
-            const auto& pos = points[i];
+            std::vector<Vector> new_points;
 
-            for (int j = 0; j <= 3; j++)
+            for (size_t i = 0; i < points.size(); ++i)
             {
-                float p = j * (360.0f / 4.0f) * (pi / 200.0f);
-                new_points.emplace_back(pos + Vector(std::cos(p) * 60.f, std::sin(p) * 60.f, 0.f));
+                const auto& pos = points[i];
+
+                for (int j = 0; j <= 3; j++)
+                {
+                    float p = j * (360.0f / 4.0f) * (pi / 200.0f);
+                    new_points.emplace_back(pos + Vector(std::cos(p) * 60.f, std::sin(p) * 60.f, 0.f));
+                }
             }
-        }
 
-        return new_points;
-    };
+            return new_points;
+        };
 
-    for (const auto& molotov : GameData::infernos()) 
+    for (const auto& molotov : GameData::infernos())
     {
         const auto color = !molotov.owner || molotov.owner->isOtherEnemy(localPlayer.get()) ? enemy :
             molotov.owner->index() != localPlayer->index() ? team : self;
@@ -1451,8 +1447,8 @@ void Visuals::updateEventListeners(bool forceRemove) noexcept
 {
     class ImpactEventListener : public GameEventListener {
     public:
-        void fireGameEvent(GameEvent* event) { 
-            bulletTracer(*event); 
+        void fireGameEvent(GameEvent* event) {
+            bulletTracer(*event);
             bulletImpact(*event);
         }
     };
@@ -1470,7 +1466,8 @@ void Visuals::updateEventListeners(bool forceRemove) noexcept
     if ((config->visuals.bulletImpacts.enabled || config->visuals.bulletTracers.enabled) && !impactListenerRegistered) {
         interfaces->gameEventManager->addListener(&impactListener, "bullet_impact");
         impactListenerRegistered = true;
-    } else if (((!config->visuals.bulletImpacts.enabled && !config->visuals.bulletTracers.enabled) || forceRemove) && impactListenerRegistered) {
+    }
+    else if (((!config->visuals.bulletImpacts.enabled && !config->visuals.bulletTracers.enabled) || forceRemove) && impactListenerRegistered) {
         interfaces->gameEventManager->removeListener(&impactListener);
         impactListenerRegistered = false;
     }

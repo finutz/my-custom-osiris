@@ -37,13 +37,14 @@ public:
         bool aimlock{ false };
         bool silent{ false };
         bool friendlyFire{ false };
-        bool visibleOnly{ true };
-        bool scopedOnly{ true };
-        bool ignoreFlash{ false };
-        bool ignoreSmoke{ false };
+        bool visibleOnly{ false };
+        bool scopedOnly{ false };
+        bool ignoreFlash{ true };
+        bool ignoreSmoke{ true };
         bool autoShot{ false };
         bool autoScope{ false };
         bool autoStop{ false };
+        bool fps_optimization{ false };
         bool disableMultipointIfLowFPS{ false };
         bool disableBacktrackIfLowFPS{ false };
         bool betweenShots{ false };
@@ -274,7 +275,7 @@ public:
             float rotationIntensity{ 1.0f };
             float strength{ 1.0f };
         } motionBlur;
-        
+
         struct FootstepESP {
             ColorToggle footstepBeams{ 0.2f, 0.5f, 1.f, 1.0f };
             int footstepBeamRadius = 0;
@@ -290,7 +291,7 @@ public:
         float bulletImpactsTime{ 4.f };
         int playerModelT{ 0 };
         int playerModelCT{ 0 };
-        char playerModel[256] { };
+        char playerModel[256]{ };
         bool disableJiggleBones{ false };
         BulletTracers bulletTracers;
         ColorToggle molotovHull{ 1.0f, 0.27f, 0.0f, 0.3f };
@@ -304,19 +305,19 @@ public:
         } molotovPolygon;
         struct Viewmodel
         {
-            bool enabled { false };
+            bool enabled{ false };
             int fov{ 0 };
-            float x { 0.0f };
-            float y { 0.0f };
-            float z { 0.0f };
-            float roll { 0.0f };
+            float x{ 0.0f };
+            float y{ 0.0f };
+            float z{ 0.0f };
+            float roll{ 0.0f };
         } viewModel;
         struct OnHitHitbox
         {
             ColorToggle color{ 1.f, 1.f, 1.f, 1.f };
             float duration = 2.f;
         } onHitHitbox;
-        ColorToggleOutline spreadCircle { 1.0f, 1.0f, 1.0f, 0.25f };
+        ColorToggleOutline spreadCircle{ 1.0f, 1.0f, 1.0f, 0.25f };
         int asusWalls = 100;
         int asusProps = 100;
         bool smokeTimer{ false };
@@ -398,7 +399,7 @@ public:
         char clanTag[16];
         char name[16];
         ColorToggleThickness noscopeCrosshair;
-        ColorToggleThickness recoilCrosshair; 
+        ColorToggleThickness recoilCrosshair;
         ColorToggleThickness headshotLine;
         ColorToggleThickness nadeDamagePredict;
         Color4 nadeTrailPredict;
