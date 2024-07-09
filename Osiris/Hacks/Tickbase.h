@@ -5,6 +5,7 @@ struct UserCmd;
 namespace Tickbase
 {
 	void start(UserCmd* cmd) noexcept;
+	void getCmd(UserCmd* cmd) noexcept;
 	void end(UserCmd* cmd) noexcept;
 
 	bool shift(UserCmd* cmd, int shiftAmount, bool forceShift = false) noexcept;

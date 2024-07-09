@@ -2399,7 +2399,7 @@ void GUI::renderGuiStyle() noexcept {
     ImGuiStyle* Style = &ImGui::GetStyle();
     Style->WindowRounding = 5.5;
     Style->WindowBorderSize = 2.5;
-    Style->ChildRounding = 5.5;
+    Style->ChildRounding = 6.5;
     Style->FrameBorderSize = 2.5;
     Style->ChildBorderSize = 1.f;
     Style->Colors[ImGuiCol_WindowBg] = ImColor(0, 0, 0, 0);
