@@ -2542,7 +2542,7 @@ void GUI::renderGuiStyle() noexcept {
                         ImGui::SetCursorPos(ImVec2{ 5, 5 }); // pozitia sub main
                         Style->Colors[ImGuiCol_ChildBg] = ImColor(29, 34, 38);
                         Style->ChildRounding = 5;
-                        ImGui::BeginChild("##SubMain", ImVec2{ 690, 390 }, false); // original 587x355 , marimea la sub main
+                        ImGui::BeginChild("##SubMain", ImVec2{ 690, 385 }, false); // original 587x355 , marimea la sub main
                         {
                             ImGui::SetCursorPos(ImVec2{ 10, 10 });
                             switch (activeTab) {
