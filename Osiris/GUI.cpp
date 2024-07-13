@@ -693,7 +693,7 @@ void GUI::renderLegitAntiAimWindow() noexcept
     ImGui::Columns(1);
 }
 
-void GUI::renderRageAntiAimWindow() noexcept
+void GUI::renderRageAntiAimWindow() noexcept //aa
 {
     ImGui::Columns(2, nullptr, false);
     ImGui::SetColumnOffset(1, 345.f);
@@ -740,13 +740,13 @@ void GUI::renderRageAntiAimWindow() noexcept
     ImGui::SliderInt("Right limit", &config->fakeAngle.rightLimit, 0, 60, "%d");
     ImGui::PopItemWidth();
 
-    ImGui::Combo("Mode", &config->fakeAngle.peekMode, "Off\0Peek real\0Peek fake\0Jitter\0");
+    ImGui::Combo("Peek Mode", &config->fakeAngle.peekMode, "Off\0Peek real\0Peek fake\0Jitter\0");
     ImGui::Combo("Lby mode", &config->fakeAngle.lbyMode, "Normal\0Opposite\0Sway\0");
 
     ImGui::Text("");
 
     ImGui::Checkbox("Enable fakelag", &config->fakelag.enabled);
-    ImGui::Combo("Mode", &config->fakelag.mode, "Static\0Adaptative\0Random\0");
+    ImGui::Combo("fakelag mode", &config->fakelag.mode, "Static\0Adaptative\0Random\0");
     ImGui::PushItemWidth(220.0f);
     ImGui::SliderInt("Limit", &config->fakelag.limit, 1, 15, "%d");
 
@@ -2399,19 +2399,16 @@ void GUI::renderGuiStyle() noexcept {
     ImGuiStyle* Style = &ImGui::GetStyle();
     Style->WindowRounding = 5.5;
     Style->WindowBorderSize = 2.5;
-    Style->ChildRounding = 6.5;
+    Style->ChildRounding = 5.5;
     Style->FrameBorderSize = 2.5;
-    Style->ChildBorderSize = 1.f;
     Style->Colors[ImGuiCol_WindowBg] = ImColor(0, 0, 0, 0);
     Style->Colors[ImGuiCol_ChildBg] = ImColor(31, 31, 31);
     Style->Colors[ImGuiCol_Button] = ImColor(64, 64, 64);
     Style->Colors[ImGuiCol_ButtonHovered] = ImColor(75, 75, 75);
     Style->Colors[ImGuiCol_ButtonActive] = ImColor(80, 80, 80);
     Style->Colors[ImGuiCol_ScrollbarGrab] = ImColor(25, 30, 34, 0);
-    Style->Colors[ImGuiCol_ScrollbarBg] = ImColor(0, 0, 0, 0);
     Style->Colors[ImGuiCol_ScrollbarGrabActive] = ImColor(25, 30, 34, 0);
     Style->Colors[ImGuiCol_ScrollbarGrabHovered] = ImColor(25, 30, 34, 0);
-    ImGui::SetNextWindowSize(ImVec2(784, 480));
 
     static auto Name = "Menu";
     static auto Flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
@@ -2423,16 +2420,14 @@ void GUI::renderGuiStyle() noexcept {
     static int activeSubTabConfigs = 1;
 
     if (ImGui::Begin(Name, NULL, Flags)) {
-
-        ImDrawList* draw_list = ImGui::GetWindowDrawList();
         Style->Colors[ImGuiCol_ChildBg] = ImColor(45, 45, 45);
         ImGui::BeginChild("##Back", ImVec2{ 704, 480 }, false);
         {
             ImGui::SetCursorPos(ImVec2{ 2, 2 });
             Style->Colors[ImGuiCol_ChildBg] = ImColor(45, 45, 45);
-            ImGui::BeginChild("##Main", ImVec2{ 700, 470 }, false);
+            ImGui::BeginChild("##Main", ImVec2{ 700, 470 }, false); 
             {
-                ImGui::BeginChild("##UP", ImVec2{ 700, 45 }, false);
+                ImGui::BeginChild("##UP", ImVec2{ 700, 45 }, false); 
                 {
                     ImGui::SetCursorPos(ImVec2{ 10, 6 });
                     ImGui::PushFont(fonts.tahoma34);
@@ -2467,7 +2462,7 @@ void GUI::renderGuiStyle() noexcept {
                 ImGui::EndChild();
 
                 // New Row for Sub Tabs
-                ImGui::BeginChild("##SubTabs", ImVec2{ 700, 30 }, false);
+                ImGui::BeginChild("##SubTabs", ImVec2{ 700, 30 }, false); 
                 {
                     float subTabPos = 10;
                     switch (activeTab) {
@@ -2513,8 +2508,8 @@ void GUI::renderGuiStyle() noexcept {
                         subTabPos += 80;
                         ImGui::SetCursorPos(ImVec2{ subTabPos, 0 });
 
-                        // if (activeSubTabRagebot == 5) Active(); else Hovered();
-                        // if (ImGui::Button("FakeLag", ImVec2{ 75, 30 })) activeSubTabRagebot = 5;
+                       // if (activeSubTabRagebot == 5) Active(); else Hovered();
+                       // if (ImGui::Button("FakeLag", ImVec2{ 75, 30 })) activeSubTabRagebot = 5;
                         break;
                     case 3: // Visuals
                         ImGui::SetCursorPos(ImVec2{ subTabPos, 0 });
@@ -2557,16 +2552,20 @@ void GUI::renderGuiStyle() noexcept {
 
                 ImGui::SetCursorPos(ImVec2{ 0, 75 });
                 Style->Colors[ImGuiCol_ChildBg] = ImColor(64, 64, 64);
-                ImGui::BeginChild("##Childs", ImVec2{ 700, 395 }, false);
+                Style->Colors[ImGuiCol_Button] = ImColor(64, 64, 64);
+                Style->Colors[ImGuiCol_ButtonHovered] = ImColor(75, 75, 75);
+                Style->Colors[ImGuiCol_ButtonActive] = ImColor(80, 80, 80);
+
+                ImGui::BeginChild("##Childs", ImVec2{ 700, 395 }, false); 
                 {
                     ImGui::SetCursorPos(ImVec2{ 15, 5 });
                     Style->ChildRounding = 0;
-                    ImGui::BeginChild("##Left", ImVec2{ 155, 320 }, false);
+                    ImGui::BeginChild("##Left", ImVec2{ 155, 320 }, false); 
                     {
                         ImGui::EndChild();
 
                         ImGui::SetCursorPos(ImVec2{ 5, 5 }); // pozitia sub main
-                        Style->Colors[ImGuiCol_ChildBg] = ImColor(55, 55, 55);
+                        Style->Colors[ImGuiCol_ChildBg] = ImColor(31, 31, 31);
                         Style->ChildRounding = 5;
                         ImGui::BeginChild("##SubMain", ImVec2{ 690, 385 }, false); // original 587x355 , marimea la sub main
                         {
@@ -2604,9 +2603,9 @@ void GUI::renderGuiStyle() noexcept {
                                 case 4: // Fake Angle
                                     renderDefensiveWindow();
                                     break;
-                                    //case 5: // FakeLag
-                                        //renderFakelagWindow();
-                                        //break;
+                                //case 5: // FakeLag
+                                    //renderFakelagWindow();
+                                    //break;
                                 default:
                                     break;
                                 }
@@ -2664,6 +2663,5 @@ void GUI::renderGuiStyle() noexcept {
     ImGui::End();
     Style->Colors[ImGuiCol_WindowBg] = ImVec4(0.07f, 0.07f, 0.09f, 0.75f);
 }
-
 
 
