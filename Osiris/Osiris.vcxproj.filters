@@ -688,5 +688,8 @@
     <ClInclude Include="Localize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fontbyte.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
