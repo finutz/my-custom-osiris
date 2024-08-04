@@ -3,12 +3,16 @@
 #include "../Memory.h"
 
 #include "Tickbase.h"
+#include "AntiAim.h"
 
 #include "../SDK/ClientState.h"
 #include "../SDK/Entity.h"
 #include "../SDK/UserCmd.h"
 #include "../SDK/NetworkChannel.h"
 
+#include "../Hacks/EnginePrediction.h"
+#include "../SDK/Input.h"
+#include "../SDK/Prediction.h"
 /*
 For those confused as to why i hooked clMove and writeUserCmdDelta, its simple
 For teleport you run all the ticks you send, so you need to create commands for each cmd sent, basically run clMove multiple times
@@ -47,10 +51,10 @@ void Tickbase::start(UserCmd* cmd) noexcept
         return;
     }
 
-    if (config->tickbase.doubletap.isActive())
-        targetTickShift = 13;
-    else if (config->tickbase.hideshots.isActive())
-        targetTickShift = 9;
+    if (config->tickbase.hideshots.isActive())
+        targetTickShift = 10;
+    else if (config->tickbase.doubletap.isActive())
+        targetTickShift = 16;
 
     //We do -1 to leave 1 tick to fakelag
     targetTickShift = std::clamp(targetTickShift, 0, maxUserCmdProcessTicks - 1);

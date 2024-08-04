@@ -1,15 +1,34 @@
 #include "../Interfaces.h"
-
+#include <random>
 #include "hitscan.h"
 #include "AntiAim.h"
-#include "Tickbase.h"
 
+#include "../imgui/imgui.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "../imgui/imgui_internal.h"
+#include "../GameData.h"
+#include "../Memory.h"
 #include "../SDK/Engine.h"
+#include "../Netvars.h"
 #include "../SDK/Entity.h"
+#include "../SDK/EngineTrace.h"
 #include "../SDK/EntityList.h"
 #include "../SDK/NetworkChannel.h"
 #include "../SDK/UserCmd.h"
+#include "Tickbase.h"
+#include "../includes.hpp"
 int tw; //for the 3way >w<
+
+//for random pitch and yaw
+//may use this for defensive??
+float RandomFloat(float a, float b, float multiplier) {
+    float random = ((float)rand()) / (float)RAND_MAX;
+    float diff = b - a;
+    float r = random * diff;
+    float result = a + r;
+    return result * multiplier;
+}
+
 
 
 bool updateLby(bool update = false) noexcept
@@ -85,9 +104,10 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
         {
             case 0: //None
             break;
-            case 1: //Down
-            cmd->viewangles.x = 89.f;
-            break;
+            case 1: { //Down
+                cmd->viewangles.x = 89.f;
+                break;
+            }
             case 2: //FLICK UP
             {
             float pitch = 89.f;
@@ -100,11 +120,13 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                 cmd->viewangles.x = pitch;
              break;
             }
-            case 4: //Up
+            case 3: { //Up
                 cmd->viewangles.x = -89.f;
                 break;
-            case 5 :{
-            //soon fake pitch 
+            }
+            case 4 : { //Random
+                float pitch = round(RandomFloat(-89, 89, 1.f));
+                cmd->viewangles.x = pitch;
                 break;
             }
             
@@ -224,7 +246,11 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                         yaw += config->rageAntiAim.twrange;
                         stage = 0;
                     }
-                
+                    break;
+            }
+            case 3: {
+                //random jitter will be added here
+                break;
             }
                 default:
                 break;

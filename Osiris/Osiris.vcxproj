@@ -231,6 +231,7 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Threading.h" />
     <ClInclude Include="Vector2D.hpp" />
+    <ClInclude Include="Vertex.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

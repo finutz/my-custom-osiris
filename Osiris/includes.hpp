@@ -32,7 +32,7 @@
 #include "Hacks/Misc.h"
 #include "Hacks/EnginePrediction.h"
 #include "Vector2D.hpp"
-
+#include "Vertex.hpp"
 
 #define NUM_ENT_ENTRY_BITS         (11 + 2)
 #define NUM_ENT_ENTRIES            (1 << NUM_ENT_ENTRY_BITS)
@@ -52,6 +52,7 @@ __forceinline static FuncType call_virtual(void* ppClass, int index)
 	return (FuncType)(dwAddress);
 }
 class IHandleEntity;
+
 
 class CBaseHandle { //-V690
 public:
@@ -201,6 +202,32 @@ public:
 	virtual int                   GetMaxEntities() = 0;
 };
 
+
+/*
+inline int get_moving_flag(const UserCmd* cmd)
+{
+	if (cmd->buttons & UserCmd::IN_USE && config->condAA.onUse)
+		return AntiAim::latest_moving_flag = AntiAim::on_use;
+	if (config->condAA.slowwalk)
+		if (config->misc.slowwalkKey.isActive())
+			return AntiAim::latest_moving_flag = AntiAim::slow_walking;
+	if (!localPlayer->getAnimstate()->onGround && cmd->buttons & UserCmd::IN_DUCK)
+		if (config->condAA.cjump)
+			return AntiAim::latest_moving_flag = AntiAim::duck_jumping;
+	if (!localPlayer->getAnimstate()->onGround)
+		if (config->condAA.jumping)
+			return AntiAim::latest_moving_flag = AntiAim::jumping;
+	if (cmd->buttons & UserCmd::IN_DUCK)
+		if (config->condAA.chrouch)
+			return AntiAim::latest_moving_flag = AntiAim::ducking;
+	if (localPlayer->velocity().length2D() > 5.f)
+	{
+		if (config->condAA.moving)
+			return AntiAim::latest_moving_flag = AntiAim::moving;
+	}
+	return AntiAim::latest_moving_flag = AntiAim::freestanding;
+}
+*/
 
 /*int WeaponClassSex()
 {

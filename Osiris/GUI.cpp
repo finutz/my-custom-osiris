@@ -699,7 +699,7 @@ void GUI::renderRageAntiAimWindow() noexcept //aa
     ImGui::SetColumnOffset(1, 345.f);
     ImGui::Checkbox("Enable Anti Aim", &config->rageAntiAim.enabled);
     ImGui::Checkbox("Disable in freeztime", &config->disableInFreezetime);
-    ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Up\0");
+    ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Up\0Random\0");
     ImGui::Combo("Yaw base", reinterpret_cast<int*>(&config->rageAntiAim.yawBase), "Off\0Forward\0Backward\0Right\0Left\0Spin\0");
     ImGui::Combo("Yaw modifier", reinterpret_cast<int*>(&config->rageAntiAim.yawModifier), "Off\0Jitter\0ThreeWay\0");
     ImGui::PushItemWidth(220.0f);
@@ -1753,64 +1753,156 @@ void GUI::renderSkinChangerWindow() noexcept
 void GUI::renderMiscWindow() noexcept
 {
     ImGui::Columns(2, nullptr, false);
-    ImGui::SetColumnOffset(1, 255.0f);
+    ImGui::SetColumnOffset(1, 350.0f);
     hotkey3("Menu Key", config->misc.menuKey);
-    ImGui::Checkbox("Anti AFK kick", &config->misc.antiAfkKick);
-    ImGui::Checkbox("Adblock", &config->misc.adBlock);
-    ImGui::Combo("Force region", &config->misc.forceRelayCluster, "Off\0Australia\0Austria\0Brazil\0Chile\0Dubai\0France\0Germany\0Hong Kong\0India (Chennai)\0India (Mumbai)\0Japan\0Luxembourg\0Netherlands\0Peru\0Philipines\0Poland\0Singapore\0South Africa\0Spain\0Sweden\0UK\0USA (Atlanta)\0USA (Seattle)\0USA (Chicago)\0USA (Los Angeles)\0USA (Moses Lake)\0USA (Oklahoma)\0USA (Seattle)\0USA (Washington DC)\0");
-    ImGui::Checkbox("Auto strafe", &config->misc.autoStrafe);
-    ImGui::Checkbox("Bunny hop", &config->misc.bunnyHop);
-    ImGui::Checkbox("Fast duck", &config->misc.fastDuck);
-    ImGui::Checkbox("Moonwalk", &config->misc.moonwalk);
-    ImGui::Checkbox("Knifebot", &config->misc.knifeBot);
+    ImGui::Text("Info");
+    ImGui::Checkbox("Radar hack", &config->misc.radarHack);
+    ImGui::Checkbox("Reveal ranks", &config->misc.revealRanks);
     ImGui::SameLine();
-    ImGui::Combo("Mode", &config->misc.knifeBotMode, "Trigger\0Rage\0");
+    ImGui::Checkbox("Reveal money", &config->misc.revealMoney);
+    ImGui::Checkbox("Reveal suspect", &config->misc.revealSuspect);
+    ImGui::SameLine();
+    ImGui::Checkbox("Reveal votes", &config->misc.revealVotes);
 
-    ImGui::Checkbox("Block bot", &config->misc.blockBot);
+    ImGui::Checkbox("Spectator list", &config->misc.spectatorList.enabled);
     ImGui::SameLine();
-    ImGui::PushID("Block bot Key");
-    ImGui::hotkey2("", config->misc.blockBotKey);
-    ImGui::PopID();
 
-    ImGui::Checkbox("Edge Jump", &config->misc.edgeJump);
-    ImGui::SameLine();
-    ImGui::PushID("Edge Jump Key");
-    ImGui::hotkey2("", config->misc.edgeJumpKey);
-    ImGui::PopID();
+    ImGui::PushID("Spectator list");
+    if (ImGui::Button("..."))
+        ImGui::OpenPopup("");
 
-    ImGui::Checkbox("Mini jump", &config->misc.miniJump);
-    ImGui::SameLine();
-    ImGui::PushID("Mini jump Key");
-    ImGui::hotkey2("", config->misc.miniJumpKey);
-    ImGui::PopID();
-    if (config->misc.miniJump) {
-        ImGui::SliderInt("Crouch lock", &config->misc.miniJumpCrouchLock, 0, 12, "%d ticks");
+    if (ImGui::BeginPopup("")) {
+        ImGui::Checkbox("No Title Bar", &config->misc.spectatorList.noTitleBar);
+        ImGui::EndPopup();
     }
-
-    ImGui::Checkbox("Jump Bug", &config->misc.jumpBug);
-    ImGui::SameLine();
-    ImGui::PushID("Jump Bug Key");
-    ImGui::hotkey2("", config->misc.jumpBugKey);
     ImGui::PopID();
-
-    ImGui::Checkbox("Edge Bug", &config->misc.edgeBug);
     ImGui::SameLine();
-    ImGui::PushID("Edge Bug Key");
-    ImGui::hotkey2("", config->misc.edgeBugKey);
-    ImGui::PopID();
-    if (config->misc.edgeBug) {
-        ImGui::SliderInt("Pred Amnt", &config->misc.edgeBugPredAmnt, 0, 128, "%d ticks");
+    ImGui::Checkbox("Keybinds list", &config->misc.keybindList.enabled);
+    ImGui::SameLine();
+
+    ImGui::PushID("Keybinds list");
+    if (ImGui::Button("..."))
+        ImGui::OpenPopup("");
+
+    if (ImGui::BeginPopup("")) {
+        ImGui::Checkbox("No Title Bar", &config->misc.keybindList.noTitleBar);
+        ImGui::EndPopup();
     }
-
-    ImGui::Checkbox("Auto pixel surf", &config->misc.autoPixelSurf);
-    ImGui::SameLine();
-    ImGui::PushID("Auto pixel surf Key");
-    ImGui::hotkey2("", config->misc.autoPixelSurfKey);
     ImGui::PopID();
-    if (config->misc.autoPixelSurf) {
-        ImGui::SliderInt("Prediction Amnt", &config->misc.autoPixelSurfPredAmnt, 2, 4, "%d ticks");
-    }
+    ImGuiCustom::colorPicker("Bomb timer", config->misc.bombTimer);
+    ImGui::SameLine();
+    ImGuiCustom::colorPicker("Hurt indicator", config->misc.hurtIndicator);
 
+    ImGui::Checkbox("Purchase List", &config->misc.purchaseList.enabled);
+    ImGui::SameLine();
+
+    ImGui::PushID("Purchase List");
+    if (ImGui::Button("..."))
+        ImGui::OpenPopup("");
+
+    if (ImGui::BeginPopup("")) {
+        ImGui::SetNextItemWidth(75.0f);
+        ImGui::Combo("Mode", &config->misc.purchaseList.mode, "Details\0Summary\0");
+        ImGui::Checkbox("Only During Freeze Time", &config->misc.purchaseList.onlyDuringFreezeTime);
+        ImGui::Checkbox("Show Prices", &config->misc.purchaseList.showPrices);
+        ImGui::Checkbox("No Title Bar", &config->misc.purchaseList.noTitleBar);
+        ImGui::EndPopup();
+    }
+    ImGui::PopID();
+    ImGui::SameLine();
+    ImGuiCustom::colorPicker("Logger", config->misc.logger);
+    ImGui::SameLine();
+
+    ImGui::PushID("Logger");
+    if (ImGui::Button("..."))
+        ImGui::OpenPopup("");
+
+    if (ImGui::BeginPopup("")) {
+
+        static bool modes[2]{ false, false };
+        static const char* mode[]{ "Console", "Event log" };
+        static std::string previewvaluemode = "";
+        for (size_t i = 0; i < ARRAYSIZE(modes); i++)
+        {
+            modes[i] = (config->misc.loggerOptions.modes & 1 << i) == 1 << i;
+        }
+        if (ImGui::BeginCombo("Log output", previewvaluemode.c_str()))
+        {
+            previewvaluemode = "";
+            for (size_t i = 0; i < ARRAYSIZE(modes); i++)
+            {
+                ImGui::Selectable(mode[i], &modes[i], ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups);
+            }
+            ImGui::EndCombo();
+        }
+        for (size_t i = 0; i < ARRAYSIZE(modes); i++)
+        {
+            if (i == 0)
+                previewvaluemode = "";
+
+            if (modes[i])
+            {
+                previewvaluemode += previewvaluemode.size() ? std::string(", ") + mode[i] : mode[i];
+                config->misc.loggerOptions.modes |= 1 << i;
+            }
+            else
+            {
+                config->misc.loggerOptions.modes &= ~(1 << i);
+            }
+        }
+
+        static bool events[4]{ false, false, false, false };
+        static const char* event[]{ "Damage dealt", "Damage received", "Hostage taken", "Bomb plants" };
+        static std::string previewvalueevent = "";
+        for (size_t i = 0; i < ARRAYSIZE(events); i++)
+        {
+            events[i] = (config->misc.loggerOptions.events & 1 << i) == 1 << i;
+        }
+        if (ImGui::BeginCombo("Log events", previewvalueevent.c_str()))
+        {
+            previewvalueevent = "";
+            for (size_t i = 0; i < ARRAYSIZE(events); i++)
+            {
+                ImGui::Selectable(event[i], &events[i], ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups);
+            }
+            ImGui::EndCombo();
+        }
+        for (size_t i = 0; i < ARRAYSIZE(events); i++)
+        {
+            if (i == 0)
+                previewvalueevent = "";
+
+            if (events[i])
+            {
+                previewvalueevent += previewvalueevent.size() ? std::string(", ") + event[i] : event[i];
+                config->misc.loggerOptions.events |= 1 << i;
+            }
+            else
+            {
+                config->misc.loggerOptions.events &= ~(1 << i);
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+    ImGui::PushID("Player List");
+    ImGui::Checkbox("Player List", &config->misc.playerList.enabled);
+    ImGui::SameLine();
+
+    if (ImGui::Button("..."))
+        ImGui::OpenPopup("");
+
+    if (ImGui::BeginPopup("")) {
+        ImGui::Checkbox("Steam ID", &config->misc.playerList.steamID);
+        ImGui::Checkbox("Rank", &config->misc.playerList.rank);
+        ImGui::Checkbox("Wins", &config->misc.playerList.wins);
+        ImGui::Checkbox("Health", &config->misc.playerList.health);
+        ImGui::Checkbox("Armor", &config->misc.playerList.armor);
+        ImGui::Checkbox("Money", &config->misc.playerList.money);
+        ImGui::EndPopup();
+    }
+    ImGui::PopID();
+    ImGui::SameLine();
     ImGui::Checkbox("Draw velocity", &config->misc.velocity.enabled);
     ImGui::SameLine();
 
@@ -1839,132 +1931,14 @@ void GUI::renderMiscWindow() noexcept
         ImGuiCustom::colorPicker("Color", config->misc.keyBoardDisplay.color);
         ImGui::EndPopup();
     }
-    ImGui::PopID();
-
-    ImGui::Checkbox("Slowwalk", &config->misc.slowwalk);
     ImGui::SameLine();
-    ImGui::PushID("Slowwalk Key");
-    ImGui::hotkey2("", config->misc.slowwalkKey);
     ImGui::PopID();
-    if (config->misc.slowwalk) {
-        ImGui::SliderInt("Slowwalk Amnt", &config->misc.slowwalkAmnt, 0, 50, config->misc.slowwalkAmnt ? "%d u/s" : "Default");
-    }
-    ImGui::Checkbox("Fakeduck", &config->misc.fakeduck);
-    ImGui::SameLine();
-    ImGui::PushID("Fakeduck Key");
-    ImGui::hotkey2("", config->misc.fakeduckKey);
-    ImGui::PopID();
-    ImGuiCustom::colorPicker("Auto peek", config->misc.autoPeek.color.data(), &config->misc.autoPeek.color[3], &config->misc.autoPeek.rainbow, &config->misc.autoPeek.rainbowSpeed, &config->misc.autoPeek.enabled);
-    ImGui::SameLine();
-    ImGui::PushID("Auto peek Key");
-    ImGui::hotkey2("", config->misc.autoPeekKey);
-    ImGui::PopID();
-    ImGuiCustom::colorPicker("Noscope crosshair", config->misc.noscopeCrosshair);
-    ImGuiCustom::colorPicker("Recoil crosshair", config->misc.recoilCrosshair);
-    ImGuiCustom::colorPicker("Aim position line", config->misc.headshotLine);
-    ImGui::Checkbox("Auto pistol", &config->misc.autoPistol);
-    ImGui::Checkbox("Auto reload", &config->misc.autoReload);
-    ImGui::Checkbox("Auto accept", &config->misc.autoAccept);
-    ImGui::Checkbox("Radar hack", &config->misc.radarHack);
-    ImGui::Checkbox("Reveal ranks", &config->misc.revealRanks);
-    ImGui::Checkbox("Reveal money", &config->misc.revealMoney);
-    ImGui::Checkbox("Reveal suspect", &config->misc.revealSuspect);
-    ImGui::Checkbox("Reveal votes", &config->misc.revealVotes);
-    ImGui::Checkbox("Chat revealer", &config->misc.chatRevealer);
-
-    ImGui::Checkbox("Spectator list", &config->misc.spectatorList.enabled);
-    ImGui::SameLine();
-
-    ImGui::PushID("Spectator list");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::Checkbox("No Title Bar", &config->misc.spectatorList.noTitleBar);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    ImGui::Checkbox("Keybinds list", &config->misc.keybindList.enabled);
-    ImGui::SameLine();
-
-    ImGui::PushID("Keybinds list");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::Checkbox("No Title Bar", &config->misc.keybindList.noTitleBar);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    ImGui::PushID("Player List");
-    ImGui::Checkbox("Player List", &config->misc.playerList.enabled);
-    ImGui::SameLine();
-
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::Checkbox("Steam ID", &config->misc.playerList.steamID);
-        ImGui::Checkbox("Rank", &config->misc.playerList.rank);
-        ImGui::Checkbox("Wins", &config->misc.playerList.wins);
-        ImGui::Checkbox("Health", &config->misc.playerList.health);
-        ImGui::Checkbox("Armor", &config->misc.playerList.armor);
-        ImGui::Checkbox("Money", &config->misc.playerList.money);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    ImGui::PushID("Jump stats");
-    ImGui::Checkbox("Jump stats", &config->misc.jumpStats.enabled);
-    ImGui::SameLine();
-
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::Checkbox("Show fails", &config->misc.jumpStats.showFails);
-        ImGui::Checkbox("Show color on fails", &config->misc.jumpStats.showColorOnFail);
-        ImGui::Checkbox("Simplify naming", &config->misc.jumpStats.simplifyNaming);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    ImGui::Checkbox("Watermark", &config->misc.watermark.enabled);
-    ImGuiCustom::colorPicker("Offscreen Enemies", config->misc.offscreenEnemies, &config->misc.offscreenEnemies.enabled);
-    ImGui::SameLine();
-    ImGui::PushID("Offscreen Enemies");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::Checkbox("Health Bar", &config->misc.offscreenEnemies.healthBar.enabled);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(95.0f);
-        ImGui::Combo("Type", &config->misc.offscreenEnemies.healthBar.type, "Gradient\0Solid\0Health-based\0");
-        if (config->misc.offscreenEnemies.healthBar.type == HealthBar::Solid) {
-            ImGui::SameLine();
-            ImGuiCustom::colorPicker("", static_cast<Color4&>(config->misc.offscreenEnemies.healthBar));
-        }
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-    ImGui::Checkbox("Disable model occlusion", &config->misc.disableModelOcclusion);
-    ImGui::SliderFloat("Aspect Ratio", &config->misc.aspectratio, 0.0f, 5.0f, "%.2f");
-    ImGui::NextColumn();
-    ImGui::Checkbox("Disable HUD blur", &config->misc.disablePanoramablur);
-    // ImGui::Checkbox("Animated clan tag", &config->misc.animatedClanTag);
-     //ImGui::Checkbox("Clock tag", &config->misc.clocktag);
+    ImGui::Text(" ");
+    ImGui::Text("Spammers");
     ImGui::Checkbox("Clantag", &config->misc.customClanTag);
-    //ImGui::SameLine();
-    //ImGui::PushItemWidth(120.0f);
-    //ImGui::PushID(0);
-    /*
-    if (ImGui::InputText("", config->misc.clanTag, sizeof(config->misc.clanTag)))
-        Misc::updateClanTag(true);
-    ImGui::PopID();
-    */
+    ImGui::Checkbox("Clock tag", &config->misc.clocktag);
+    ImGui::PushItemWidth(120.0f);
+    ImGui::PushID(0);
     ImGui::Checkbox("Custom name", &config->misc.customName);
     ImGui::SameLine();
     ImGui::PushItemWidth(120.0f);
@@ -1975,17 +1949,28 @@ void GUI::renderMiscWindow() noexcept
     ImGui::PopID();
 
     ImGui::Checkbox("Kill message", &config->misc.killMessage);
+    
     ImGui::PopID();
     ImGui::Checkbox("Name stealer", &config->misc.nameStealer);
+    ImGui::NextColumn();
+    ImGui::Text("Local Player");
+    ImGui::PushItemWidth(120.0f);
+    ImGui::Combo("Force region", &config->misc.forceRelayCluster, "Off\0Australia\0Austria\0Brazil\0Chile\0Dubai\0France\0Germany\0Hong Kong\0India (Chennai)\0India (Mumbai)\0Japan\0Luxembourg\0Netherlands\0Peru\0Philipines\0Poland\0Singapore\0South Africa\0Spain\0Sweden\0UK\0USA (Atlanta)\0USA (Seattle)\0USA (Chicago)\0USA (Los Angeles)\0USA (Moses Lake)\0USA (Oklahoma)\0USA (Seattle)\0USA (Washington DC)\0");
+    ImGui::Checkbox("Anti AFK kick", &config->misc.antiAfkKick);
     ImGui::Checkbox("Fast plant", &config->misc.fastPlant);
-    ImGui::Checkbox("Fast Stop", &config->misc.fastStop);
-    ImGuiCustom::colorPicker("Bomb timer", config->misc.bombTimer);
-    ImGuiCustom::colorPicker("Hurt indicator", config->misc.hurtIndicator);
     ImGui::Checkbox("Prepare revolver", &config->misc.prepareRevolver);
     ImGui::SameLine();
     ImGui::PushID("Prepare revolver Key");
     ImGui::hotkey2("", config->misc.prepareRevolverKey);
     ImGui::PopID();
+
+    ImGui::Checkbox("Auto pistol", &config->misc.autoPistol);
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto accept", &config->misc.autoAccept);
+
+    ImGui::PopID();
+
+
     ImGui::Combo("Hit Sound", &config->misc.hitSound, "None\0Metal\0Gamesense\0Bell\0Glass\0Custom\0");
     if (config->misc.hitSound == 5) {
         ImGui::InputText("Hit Sound filename", &config->misc.customHitSound);
@@ -2005,27 +1990,10 @@ void GUI::renderMiscWindow() noexcept
     ImGui::SameLine();
     hotkey(config->misc.quickHealthshotKey);
     */
-    ImGui::Checkbox("Grenade Prediction", &config->misc.nadePredict);
-    ImGui::SameLine();
-    ImGui::PushID("Grenade Prediction");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGuiCustom::colorPicker("Damage", config->misc.nadeDamagePredict);
-        ImGuiCustom::colorPicker("Trail", config->misc.nadeTrailPredict);
-        ImGuiCustom::colorPicker("Circle", config->misc.nadeCirclePredict);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
     ImGui::Checkbox("Fix tablet signal", &config->misc.fixTabletSignal);
-    ImGui::SetNextItemWidth(120.0f);
-    ImGui::SliderFloat("Max angle delta", &config->misc.maxAngleDelta, 0.0f, 255.0f, "%.2f");
     ImGui::Checkbox("Opposite Hand Knife", &config->misc.oppositeHandKnife);
     ImGui::Checkbox("Sv pure bypass", &config->misc.svPureBypass);
     ImGui::Checkbox("Unlock inventory", &config->misc.inventoryUnlocker);
-    ImGui::Checkbox("Unlock hidden cvars", &config->misc.unhideConvars);
     ImGui::Checkbox("Preserve Killfeed", &config->misc.preserveKillfeed.enabled);
     ImGui::SameLine();
 
@@ -2055,23 +2023,6 @@ void GUI::renderMiscWindow() noexcept
         ImGui::Checkbox("Noscope", &config->misc.killfeedChanger.noscope);
         ImGui::Checkbox("Thrusmoke", &config->misc.killfeedChanger.thrusmoke);
         ImGui::Checkbox("Attackerblind", &config->misc.killfeedChanger.attackerblind);
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    ImGui::Checkbox("Purchase List", &config->misc.purchaseList.enabled);
-    ImGui::SameLine();
-
-    ImGui::PushID("Purchase List");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-        ImGui::SetNextItemWidth(75.0f);
-        ImGui::Combo("Mode", &config->misc.purchaseList.mode, "Details\0Summary\0");
-        ImGui::Checkbox("Only During Freeze Time", &config->misc.purchaseList.onlyDuringFreezeTime);
-        ImGui::Checkbox("Show Prices", &config->misc.purchaseList.showPrices);
-        ImGui::Checkbox("No Title Bar", &config->misc.purchaseList.noTitleBar);
         ImGui::EndPopup();
     }
     ImGui::PopID();
@@ -2181,90 +2132,14 @@ void GUI::renderMiscWindow() noexcept
         ImGui::EndPopup();
     }
     ImGui::PopID();
-
-
-    ImGuiCustom::colorPicker("Logger", config->misc.logger);
-    ImGui::SameLine();
-
-    ImGui::PushID("Logger");
-    if (ImGui::Button("..."))
-        ImGui::OpenPopup("");
-
-    if (ImGui::BeginPopup("")) {
-
-        static bool modes[2]{ false, false };
-        static const char* mode[]{ "Console", "Event log" };
-        static std::string previewvaluemode = "";
-        for (size_t i = 0; i < ARRAYSIZE(modes); i++)
-        {
-            modes[i] = (config->misc.loggerOptions.modes & 1 << i) == 1 << i;
-        }
-        if (ImGui::BeginCombo("Log output", previewvaluemode.c_str()))
-        {
-            previewvaluemode = "";
-            for (size_t i = 0; i < ARRAYSIZE(modes); i++)
-            {
-                ImGui::Selectable(mode[i], &modes[i], ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups);
-            }
-            ImGui::EndCombo();
-        }
-        for (size_t i = 0; i < ARRAYSIZE(modes); i++)
-        {
-            if (i == 0)
-                previewvaluemode = "";
-
-            if (modes[i])
-            {
-                previewvaluemode += previewvaluemode.size() ? std::string(", ") + mode[i] : mode[i];
-                config->misc.loggerOptions.modes |= 1 << i;
-            }
-            else
-            {
-                config->misc.loggerOptions.modes &= ~(1 << i);
-            }
-        }
-
-        static bool events[4]{ false, false, false, false };
-        static const char* event[]{ "Damage dealt", "Damage received", "Hostage taken", "Bomb plants" };
-        static std::string previewvalueevent = "";
-        for (size_t i = 0; i < ARRAYSIZE(events); i++)
-        {
-            events[i] = (config->misc.loggerOptions.events & 1 << i) == 1 << i;
-        }
-        if (ImGui::BeginCombo("Log events", previewvalueevent.c_str()))
-        {
-            previewvalueevent = "";
-            for (size_t i = 0; i < ARRAYSIZE(events); i++)
-            {
-                ImGui::Selectable(event[i], &events[i], ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups);
-            }
-            ImGui::EndCombo();
-        }
-        for (size_t i = 0; i < ARRAYSIZE(events); i++)
-        {
-            if (i == 0)
-                previewvalueevent = "";
-
-            if (events[i])
-            {
-                previewvalueevent += previewvalueevent.size() ? std::string(", ") + event[i] : event[i];
-                config->misc.loggerOptions.events |= 1 << i;
-            }
-            else
-            {
-                config->misc.loggerOptions.events &= ~(1 << i);
-            }
-        }
-
-        ImGui::EndPopup();
-    }
-    ImGui::PopID();
-
-    if (ImGui::Button("Unhook"))
+    if (ImGui::Button("Unlock hidden cvars"))
+        Misc::unlockHiddenCvars();
+    if (ImGui::Button("RAGE QUIT!"))
         hooks->uninstall();
 
     ImGui::Columns(1);
 }
+
 
 void GUI::renderConfigWindow() noexcept
 {
