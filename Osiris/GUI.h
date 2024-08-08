@@ -23,7 +23,7 @@ private:
     void renderTriggerbotWindow() noexcept;
     void renderFakelagWindow() noexcept;
     void renderDefensiveWindow() noexcept;
-    void renderLegitAntiAimWindow() noexcept;
+    void renderMovementWindow() noexcept;
     void renderRageAntiAimWindow() noexcept;
     void renderFakeAngleWindow() noexcept;
     void renderBacktrackWindow() noexcept;

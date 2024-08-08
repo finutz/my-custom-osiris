@@ -75,17 +75,13 @@ static bool traceToExit(const Trace& enterTrace, const Vector& start, const Vect
 
 static float handleBulletPenetration(SurfaceData* enterSurfaceData, const Trace& enterTrace, const Vector& direction, Vector& result, float penetration, float damage) noexcept
 {
-    Vector end;
+    Vector exitPoint;
     Trace exitTrace;
-
-    if (!traceToExit(enterTrace, enterTrace.endpos, direction, end, exitTrace))
+    if (!traceToExit(enterTrace, enterTrace.endpos, direction, exitPoint, exitTrace))
         return -1.0f;
-
     SurfaceData* exitSurfaceData = interfaces->physicsSurfaceProps->getSurfaceData(exitTrace.surface.surfaceProps);
-
     float damageModifier = 0.16f;
     float penetrationModifier = (enterSurfaceData->penetrationmodifier + exitSurfaceData->penetrationmodifier) / 2.0f;
-
     if (enterSurfaceData->material == 71 || enterSurfaceData->material == 89) {
         damageModifier = 0.05f;
         penetrationModifier = 3.0f;
@@ -93,19 +89,26 @@ static float handleBulletPenetration(SurfaceData* enterSurfaceData, const Trace&
     else if (enterTrace.contents >> 3 & 1 || enterTrace.surface.flags >> 7 & 1) {
         penetrationModifier = 1.0f;
     }
-
     if (enterSurfaceData->material == exitSurfaceData->material) {
-        if (exitSurfaceData->material == 85 || exitSurfaceData->material == 87)
+        switch (exitSurfaceData->material) {
+        case 85: // Wood
+        case 87: // Metal
             penetrationModifier = 3.0f;
-        else if (exitSurfaceData->material == 76)
+            break;
+        case 76: // Glass
             penetrationModifier = 2.0f;
+            break;
+        default:
+            break;
+        }
     }
-
-    damage -= 11.25f / penetration / penetrationModifier + damage * damageModifier + (exitTrace.endpos - enterTrace.endpos).squareLength() / 24.0f / penetrationModifier;
-
+    float distance = (exitTrace.endpos - enterTrace.endpos).squareLength();
+    float damageReduction = 11.25f / penetration / penetrationModifier + damage * damageModifier + distance / 24.0f / penetrationModifier;
+    damage -= damageReduction;
     result = exitTrace.endpos;
     return damage;
 }
+
 
 void hitscan::calculateArmorDamage(float armorRatio, int armorValue, bool hasHeavyArmor, float& damage) noexcept
 {

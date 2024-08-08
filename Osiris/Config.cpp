@@ -318,6 +318,7 @@ static void from_json(const json& j, Config::RageAntiAimConfig& a)
     read(j, "Yaw add", a.yawAdd);
     read(j, "Jitter Range", a.jitterRange);
     read(j, "ThreeWay", a.twrange);
+    read(j, "RandomRange", a.randRange);
     read(j, "Spin base", a.spinBase);
     read(j, "At targets", a.atTargets);
 }
@@ -1113,6 +1114,7 @@ static void to_json(json& j, const Config::RageAntiAimConfig& o, const Config::R
     WRITE("Yaw add", yawAdd);
     WRITE("Jitter Range", jitterRange);
     WRITE("ThreeWay", twrange);
+    WRITE("RandomRange", randRange);
     WRITE("Spin base", spinBase);
     WRITE("At targets", atTargets);
 }

@@ -79,6 +79,7 @@ public:
         int spinBase = 0; //-180/180
         int jitterRange = 0;
         int twrange = 0;
+        int randRange = 0;
         bool atTargets = false;
     } rageAntiAim;
 
@@ -94,7 +95,7 @@ public:
     struct Tickbase {
         KeyBind doubletap{ std::string("doubletap"), KeyMode::Off };
         KeyBind hideshots{ std::string("hideshots"), KeyMode::Off };
-        bool teleport{ false };
+        bool teleport{ true };
     } tickbase;
 
     struct LegitAntiAimConfig {

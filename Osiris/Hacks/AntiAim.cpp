@@ -18,6 +18,7 @@
 #include "Tickbase.h"
 #include "../includes.hpp"
 int tw; //for the 3way >w<
+int ry; //for the random yaw >w<
 
 //for random pitch and yaw
 //may use this for defensive??
@@ -248,8 +249,9 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                     }
                     break;
             }
-            case 3: {
-                //random jitter will be added here
+            case 3: { //random jitter
+                ry = config->rageAntiAim.randRange;
+                yaw += round(RandomFloat(-ry, ry, 1.f));
                 break;
             }
                 default:
