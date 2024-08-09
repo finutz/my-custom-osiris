@@ -427,9 +427,9 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 player.velocity.y = 0.f;
             }
 
-            auto& prev_records = players.at(i);
+            //auto& prev_records = players.at(i);
 
-            Resolver::runPreUpdate(player, prev_records, entity);
+            Resolver::runPreUpdate(player, entity);
 
             //Run animations
 
@@ -478,9 +478,9 @@ void Animations::handlePlayers(FrameStage stage) noexcept
             }
             updatingEntity = false;
 
-            prev_records = players.at(i);///maybe help for better post updat? 
+           // prev_records = players.at(i);///maybe help for better post updat? 
 
-            Resolver::runPostUpdate(player, prev_records, entity);
+            Resolver::runPostUpdate(player, entity);
 
             //Fix jump pose
             if (!(entity->flags() & 1) && !player.oldlayers.empty())// && entity->moveType() != MoveType::NOCLIP)

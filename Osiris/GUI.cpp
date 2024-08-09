@@ -520,7 +520,7 @@ void GUI::renderRagebotWindow() noexcept
 
         ImGui::NextColumn();
         ImGui::PushItemWidth(240.0f);
-        ImGui::SliderFloat("Fov", &config->ragebot[currentWeapon].fov, 0.0f, 255.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Fov", &config->ragebot[currentWeapon].fov, 0.0f, 180.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderInt("Hitchance", &config->ragebot[currentWeapon].hitChance, 0, 100, "%d");
         ImGui::SliderInt("Multipoint", &config->ragebot[currentWeapon].multiPoint, 0, 100, "%d");
         ImGui::SliderInt("Min damage", &config->ragebot[currentWeapon].minDamage, 0, 101, "%d");
@@ -769,7 +769,7 @@ void GUI::renderRageAntiAimWindow() noexcept //aa
     ImGui::Columns(2, nullptr, false);
     ImGui::SetColumnOffset(1, 345.f);
     ImGui::Checkbox("Enable Anti Aim", &config->rageAntiAim.enabled);
-    ImGui::Checkbox("Disable in freeztime", &config->disableInFreezetime);
+    //ImGui::Checkbox("Disable in freeztime", &config->disableInFreezetime);
     ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Up\0Random\0");
     ImGui::Combo("Yaw base", reinterpret_cast<int*>(&config->rageAntiAim.yawBase), "Off\0Forward\0Backward\0Right\0Left\0Spin\0");
     ImGui::Combo("Yaw modifier", reinterpret_cast<int*>(&config->rageAntiAim.yawModifier), "Off\0Jitter\0ThreeWay\0Random\0");
