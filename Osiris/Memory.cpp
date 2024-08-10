@@ -81,7 +81,7 @@ static std::uintptr_t findPattern(const char* moduleName, std::string_view patte
 Memory::Memory() noexcept
 {
     present = findPattern("gameoverlayrenderer", "\x8B\x4D?\xA1????\x51\xFF") + 4;
-    reset = findPattern("gameoverlayrenderer", "\xE8????\xA1????\x57\x53") + 6;  ///we no no need dis shit
+    reset = findPattern("gameoverlayrenderer", "\xE8????\xA1????\x57\x53") + 6;  ///we need dis
 
     clientMode = **reinterpret_cast<ClientMode***>((*reinterpret_cast<uintptr_t**>(interfaces->client))[10] + 5);
     input = *reinterpret_cast<Input**>((*reinterpret_cast<uintptr_t**>(interfaces->client))[16] + 1);
