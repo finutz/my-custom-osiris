@@ -4,6 +4,7 @@
 #include "../SDK/Entity.h"
 #include "../SDK/FrameStage.h"
 #include "../SDK/ModelInfo.h"
+#include "../SDK/Vector.h"
 
 #include <array>
 #include <deque>

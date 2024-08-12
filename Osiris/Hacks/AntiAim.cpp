@@ -17,20 +17,19 @@
 #include "../SDK/UserCmd.h"
 #include "Tickbase.h"
 #include "../includes.hpp"
-int tw; //for the 3way >w<
-int ry; //for the random yaw >w<
+static bool isShooting{ false };
+static bool didShoot{ false };
+static float lastShotTime{ 0.f };
 
-//for random pitch and yaw
-//may use this for defensive??
-float RandomFloat(float a, float b, float multiplier) {
-    float random = ((float)rand()) / (float)RAND_MAX;
-    float diff = b - a;
-    float r = random * diff;
-    float result = a + r;
-    return result * multiplier;
-}
-
-
+enum e_game_phase {
+    GAMEPHASE_WARMUP_ROUND,
+    GAMEPHASE_PLAYING_STANDARD,
+    GAMEPHASE_PLAYING_FIRST_HALF,
+    GAMEPHASE_PLAYING_SECOND_HALF,
+    GAMEPHASE_HALFTIME,
+    GAMEPHASE_MATCH_ENDED,
+    GAMEPHASE_MAX
+};
 
 bool updateLby(bool update = false) noexcept
 {
@@ -97,55 +96,95 @@ bool autoDirection(Vector eyeAngle) noexcept
     return true;
 }
 
+float RandomFloat(float a, float b, float multiplier) {
+    float random = ((float)rand()) / (float)RAND_MAX;
+    float diff = b - a;
+    float r = random * diff;
+    float result = a + r;
+    return result * multiplier;
+}
+
+static bool invert = true;
 void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector& currentViewAngles, bool& sendPacket) noexcept
 {
-    if ((cmd->viewangles.x == currentViewAngles.x || Tickbase::isShifting()) && config->rageAntiAim.enabled)
+    static bool willgetstabbed = false;
+    if (!config->condAA.global)
     {
-        switch (config->rageAntiAim.pitch)
+        return;
+    }
+    /*breakers*/
+    if ((config->condAA.animBreakers & 1 << 0) == 1 << 0)
+        localPlayer->setPoseParameter(1, 6);
+    else
+        localPlayer->setPoseParameter(0, 6);
+    /*if ((config->condAA.animBreakers & 1 << 1) == 1 << 1)
+    {
+        localPlayer->setPoseParameter(1, 14);
+        localPlayer->setPoseParameter(1, 15);
+    }
+    if ((config->condAA.animBreakers & 1 << 2) == 1 << 2)
+    {
+        localPlayer->poseParameters().data()[8] = 0;
+        localPlayer->poseParameters().data()[9] = 0;
+        localPlayer->poseParameters().data()[10] = 0;
+    }*/
+    auto moving_flag1{ get_moving_flag(cmd) };
+    if ((cmd->viewangles.x == currentViewAngles.x || Tickbase::isShifting()))
+    {
+        if (willgetstabbed)
+            cmd->viewangles.x = 0.f;
+        else
         {
+            switch (config->rageAntiAim[static_cast<int>(moving_flag1)].pitch)
+            {
             case 0: //None
-            break;
-            case 1: { //Down
+                break;
+            case 1: //Down
                 cmd->viewangles.x = 89.f;
                 break;
-            }
-            case 2: //FLICK UP
-            {
-            float pitch = 89.f;
-            if (memory->globalVars->tickCount % 10 == 10 / 2)
-            {
-                pitch = -89.f;
-            }
-                else
-                pitch = 89.f;
-                cmd->viewangles.x = pitch;
-             break;
-            }
-            case 3: { //Up
+            case 2: //Zero
+                cmd->viewangles.x = 0.f;
+                break;
+            case 3: //Up
                 cmd->viewangles.x = -89.f;
                 break;
+            case 4: //Fake pitch
+            {
+                float pitch = 89.f;
+                if (memory->globalVars->tickCount % 10/2 == 0)
+                {
+                    pitch = -89.f;
+                }
+                else
+                    pitch = 89.f;
+                cmd->viewangles.x = pitch;
+                break;
             }
-            case 4 : { //Random
+            case 5: //random
+            {
                 float pitch = round(RandomFloat(-89, 89, 1.f));
                 cmd->viewangles.x = pitch;
                 break;
             }
-            
             default:
-            break;
+                break;
+            }
         }
     }
     if (cmd->viewangles.y == currentViewAngles.y || Tickbase::isShifting())
     {
-        if (config->rageAntiAim.yawBase != Yaw::off
-            && config->rageAntiAim.enabled)   //AntiAim
+        if (config->rageAntiAim[static_cast<int>(moving_flag1)].yawBase != Yaw::off)   //AntiAim
         {
+            const bool forward = config->manualForward.isActive();
+            const bool back = config->manualBackward.isActive();
+            const bool right = config->manualRight.isActive();
+            const bool left = config->manualLeft.isActive();
+            const bool isManualSet = forward || back || right || left;
             float yaw = 0.f;
             static float staticYaw = 0.f;
             static bool flipJitter = false;
-            if (sendPacket)
-                flipJitter ^= 1;
-            if (config->rageAntiAim.atTargets)
+            bool isFreestanding{ false };
+            if (config->rageAntiAim[static_cast<int>(moving_flag1)].atTargets && localPlayer->moveType() != MoveType::LADDER && !willgetstabbed)
             {
                 Vector localPlayerEyePosition = localPlayer->getEyePosition();
                 const auto aimPunch = localPlayer->getAimPunch();
@@ -154,7 +193,7 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                 for (int i = 1; i <= interfaces->engine->getMaxClients(); ++i) {
                     const auto entity{ interfaces->entityList->getEntity(i) };
                     if (!entity || entity == localPlayer.get() || entity->isDormant() || !entity->isAlive()
-                        || !entity->isOtherEnemy(localPlayer.get()) || entity->gunGameImmunity())
+                        || !entity->isOtherEnemy(localPlayer.get()))
                         continue;
 
                     const auto angle{ hitscan::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles + aimPunch) };
@@ -167,11 +206,71 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                 }
                 yaw = yawAngle;
             }
+            if (localPlayer->moveType() != MoveType::LADDER || localPlayer->moveType() != MoveType::NOCLIP)
+            {
+                Vector localPlayerEyePosition = localPlayer->getEyePosition();
+                const auto aimPunch = localPlayer->getAimPunch();
+                float bestFov = 255.f;
+                float yawAngle = 0.f;
+                for (int i = 1; i <= interfaces->engine->getMaxClients(); ++i) {
+                    const auto entity{ interfaces->entityList->getEntity(i) };
+                    if (!entity || entity == localPlayer.get() || entity->isDormant() || !entity->isAlive()
+                        || !entity->isOtherEnemy(localPlayer.get()))
+                    {
+                        willgetstabbed = false;
+                        continue;
+                    }
 
-            if (config->rageAntiAim.yawBase != Yaw::spin)
+                    auto enemyDist = entity->getAbsOrigin().distTo(localPlayer->getAbsOrigin());
+                    if (enemyDist > 469)
+                    {
+                        willgetstabbed = false;
+                        continue;
+                    }
+
+                    if (!entity->getActiveWeapon())
+                    {
+                        willgetstabbed = false;
+                        continue;
+                    }
+
+                    if (entity->getActiveWeapon()->isKnife())
+                    {
+                        const auto angle{ hitscan::calculateRelativeAngle(localPlayerEyePosition, entity->getAbsOrigin(), cmd->viewangles) };
+                        const auto fov{ angle.length2D() };
+                        if (fov < bestFov)
+                        {
+                            yawAngle = angle.y;
+                            bestFov = fov;
+                        }
+                        yaw = yawAngle;
+                        switch (config->rageAntiAim[static_cast<int>(moving_flag1)].yawBase)
+                        {
+                        case Yaw::forward:
+                            yaw += 0.f;
+                            break;
+                        case Yaw::backward:
+                            yaw -= 180.f;
+                            break;
+                        case Yaw::right:
+                            yaw -= -90.f;
+                            break;
+                        case Yaw::left:
+                            yaw -= 90.f;
+                            break;
+                        default:
+                            break;
+                        }
+                        willgetstabbed = true;
+                    }
+                    else
+                        willgetstabbed = false;
+                }
+            }
+            if (config->rageAntiAim[static_cast<int>(moving_flag1)].yawModifier != 6)
                 staticYaw = 0.f;
 
-            switch (config->rageAntiAim.yawBase)
+            switch (config->rageAntiAim[static_cast<int>(moving_flag1)].yawBase)
             {
             case Yaw::forward:
                 yaw += 0.f;
@@ -185,56 +284,120 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
             case Yaw::left:
                 yaw += 90.f;
                 break;
-            case Yaw::spin:
-                staticYaw += static_cast<float>(config->rageAntiAim.spinBase);
-                yaw += staticYaw;
-                break;
             default:
                 break;
             }
 
-            const bool forward = config->rageAntiAim.manualForward.isActive();
-            const bool back = config->rageAntiAim.manualBackward.isActive();
-            const bool right = config->rageAntiAim.manualRight.isActive();
-            const bool left = config->rageAntiAim.manualLeft.isActive();
-            const bool isManualSet = forward || back || right || left;
-
-            if (back) {
-                yaw = -180.f;
-                if (left)
-                    yaw -= 45.f;
-                else if (right)
-                    yaw += 45.f;
-            }
-            else if (left) {
-                yaw = 90.f;
-                if (back)
-                    yaw += 45.f;
-                else if (forward)
-                    yaw -= 45.f;
-            }
-            else if (right) {
-                yaw = -90.f;
-                if (back)
-                    yaw -= 45.f;
-                else if (forward)
-                    yaw += 45.f;
-            }
-            else if(forward) {
-                yaw = 0.f;
-            }
-
-            switch (config->rageAntiAim.yawModifier)
+            if (!willgetstabbed)
             {
-            case 1: //Jitter
-                yaw -= flipJitter ? config->rageAntiAim.jitterRange : -config->rageAntiAim.jitterRange;
+                if (back) {
+                    yaw = -180.f;
+                    if (left)
+                        yaw -= 45.f;
+                    else if (right)
+                        yaw += 45.f;
+                }
+                else if (left) {
+                    yaw = 90.f;
+                    if (back)
+                        yaw += 45.f;
+                    else if (forward)
+                        yaw -= 45.f;
+                }
+                else if (right) {
+                    yaw = -90.f;
+                    if (back)
+                        yaw -= 45.f;
+                    else if (forward)
+                        yaw += 45.f;
+                }
+                else if (forward) {
+                    yaw = 0.f;
+                }
+            }
+
+            if (config->rageAntiAim[static_cast<int>(moving_flag1)].fakeFlick && config->fakeFlickOnKey.isActive() && !willgetstabbed)
+            {
+                auto rate = config->rageAntiAim[static_cast<int>(moving_flag1)].fakeFlickRate;
+                auto tick = (int)memory->globalVars->tickCount % rate;
+                if (tick == 0 && !config->flipFlick.isActive())
+                    yaw += 90;
+                else if (tick == 0 && config->flipFlick.isActive())
+                    yaw -= 90;
+                else
+                    yaw = yaw;
+            }
+            if (config->rageAntiAim[static_cast<int>(moving_flag1)].freestand && config->freestandKey.isActive() && !willgetstabbed)
+            {
+                constexpr std::array positions = { -30.0f, 0.0f, 30.0f };
+                std::array active = { false, false, false };
+                const auto fwd = Vector::fromAngle2D(cmd->viewangles.y);
+                const auto side = fwd.crossProduct(Vector::up());
+
+                for (std::size_t i{}; i < positions.size(); i++)
+                {
+                    const auto start = localPlayer->getEyePosition() + side * positions[i];
+                    const auto end = start + fwd * 100.0f;
+
+                    Trace trace{};
+                    interfaces->engineTrace->traceRay({ start, end }, 0x1 | 0x2, nullptr, trace);
+
+                    if (trace.fraction != 1.0f)
+                        active[i] = true;
+                }
+
+                if (active[0] && active[1] && !active[2])
+                {
+                    yaw = 90.f;
+                    auto_direction_yaw = -1;
+                    isFreestanding = true;
+                }
+                else if (!active[0] && active[1] && active[2])
+                {
+                    yaw = -90.f;
+                    auto_direction_yaw = 1;
+                    isFreestanding = true;
+                }
+                else
+                {
+                    auto_direction_yaw = 0;
+                    isFreestanding = false;
+                }
+            }
+            if (sendPacket && !AntiAim::getDidShoot())
+                flipJitter ^= 1;
+            switch (config->rageAntiAim[static_cast<int>(moving_flag1)].yawModifier)
+            {
+            case 0:
                 break;
-            case 2: {  // 3 way 
-                
+            case 1: //Jitter centered
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    if (config->rageAntiAim[static_cast<int>(moving_flag1)].desync && config->rageAntiAim[static_cast<int>(moving_flag1)].peekMode == 3)
+                        yaw -= invert ? config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange : -config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
+                    else
+                        yaw -= flipJitter ? config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange : -config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
+                }
+                break;
+            case 2: // jitter offset
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    yaw += flipJitter ? config->invert.isActive() ? config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange : -config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange : 0;
+                }
+                break;
+            case 3:
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    yaw += round(RandomFloat(-config->rageAntiAim[moving_flag1].randomRange, config->rageAntiAim[moving_flag1].randomRange, 1.f));
+                }
+                break;
+            case 4:
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
                     static int stage = 0;
                     if (stage == 0)
                     {
-                        yaw -= config->rageAntiAim.twrange;
+                        yaw -= config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
                         stage = 1;
                     }
                     else if (stage == 1)
@@ -244,43 +407,75 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                     }
                     else if (stage == 2)
                     {
-                        yaw += config->rageAntiAim.twrange;
+                        yaw += config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
                         stage = 0;
                     }
-                    break;
-            }
-            case 3: { //random jitter
-                ry = config->rageAntiAim.randRange;
-                yaw += round(RandomFloat(-ry, ry, 1.f));
+                }
+                break;
+            case 5:
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    static int stage = 0;
+                    if (stage == 0)
+                    {
+                        yaw -= config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
+                        stage = 1;
+                    }
+                    else if (stage == 1)
+                    {
+                        yaw -= config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange / 2;
+                        stage = 2;
+                    }
+                    else if (stage == 2)
+                    {
+                        yaw += 0;
+                        stage = 3;
+                    }
+                    else if (stage == 3)
+                    {
+                        yaw += config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange / 2;
+                        stage = 4;
+                    }
+                    else if (stage == 4)
+                    {
+                        yaw += config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
+                        stage = 0;
+                    }
+                }
+                break;
+            case 6: //spin           
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    staticYaw += config->rageAntiAim[static_cast<int>(moving_flag1)].spinBase;
+                    yaw += staticYaw;
+                }
+                break;
+            case 7:
+                if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                {
+                    yaw -= memory->globalVars->tickCount % config->rageAntiAim[static_cast<int>(moving_flag1)].tickDelays - 1 == 0 ? config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange : -config->rageAntiAim[static_cast<int>(moving_flag1)].jitterRange;
+                }
+                break;
+            default:
                 break;
             }
-                default:
-                break;
-            }
-
-            if (!isManualSet)
-                yaw += static_cast<float>(config->rageAntiAim.yawAdd);
+            if (!isManualSet && isFreestanding == false && !willgetstabbed)
+                yaw += static_cast<float>(config->rageAntiAim[static_cast<int>(moving_flag1)].yawAdd);
             cmd->viewangles.y += yaw;
         }
-        if (config->fakeAngle.enabled) //Fakeangle
+        if (config->rageAntiAim[static_cast<int>(moving_flag1)].desync && !Tickbase::isShifting())
         {
-            if (const auto gameRules = (*memory->gameRules); gameRules)
-                if (getGameMode() != GameMode::Competitive && gameRules->isValveDS())
-                    return;
-
-            bool isInvertToggled = config->fakeAngle.invert.isActive();
-            static bool invert = true;
-            if (config->fakeAngle.peekMode != 3)
+            bool isInvertToggled = config->invert.isActive();
+            if (config->rageAntiAim[static_cast<int>(moving_flag1)].peekMode != 3)
                 invert = isInvertToggled;
-            float leftDesyncAngle = config->fakeAngle.leftLimit * 2.f;
-            float rightDesyncAngle = config->fakeAngle.rightLimit * -2.f;
-
-            switch (config->fakeAngle.peekMode)
+            float leftDesyncAngle = config->rageAntiAim[static_cast<int>(moving_flag1)].leftLimit * 2.f;
+            float rightDesyncAngle = config->rageAntiAim[static_cast<int>(moving_flag1)].rightLimit * -2.f;
+            switch (config->rageAntiAim[static_cast<int>(moving_flag1)].peekMode)
             {
             case 0:
                 break;
             case 1: // Peek real
-                if(!isInvertToggled)
+                if (!isInvertToggled)
                     invert = !autoDirection(cmd->viewangles);
                 else
                     invert = autoDirection(cmd->viewangles);
@@ -292,14 +487,16 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                     invert = autoDirection(cmd->viewangles);
                 break;
             case 3: // Jitter
-                if (sendPacket)
+                if (sendPacket && config->rageAntiAim[static_cast<int>(moving_flag1)].yawModifier != 7)
                     invert = !invert;
+                else if (sendPacket && config->rageAntiAim[static_cast<int>(moving_flag1)].yawModifier == 7)
+                    memory->globalVars->tickCount% config->rageAntiAim[static_cast<int>(moving_flag1)].tickDelays - 1 == 0 ? invert = !invert : invert = !invert;
                 break;
             default:
                 break;
             }
 
-            switch (config->fakeAngle.lbyMode)
+            switch (config->rageAntiAim[static_cast<int>(moving_flag1)].lbyMode)
             {
             case 0: // Normal(sidemove)
                 if (fabsf(cmd->sidemove) < 5.0f)
@@ -318,22 +515,18 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
                     return;
                 }
                 break;
-            case 2: 
-             {// Sway (flip every lby update)
+            case 2: //Sway (flip every lby update)
                 static bool flip = false;
-                if (updateLby()) // Function to check if LBY update is needed
+                if (updateLby())
                 {
-                    flip = !flip; // Flip the state on each LBY update
-                    cmd->viewangles.y += flip ? leftDesyncAngle : rightDesyncAngle;
-                    sendPacket = false; // Ensure the packet is not sent this tick
-                    return; // Exit early to ensure desync is applied correctly
+                    cmd->viewangles.y += !flip ? leftDesyncAngle : rightDesyncAngle;
+                    sendPacket = false;
+                    flip = !flip;
+                    return;
                 }
                 if (!sendPacket)
-                {
-                    cmd->viewangles.y += flip ? rightDesyncAngle : leftDesyncAngle;
-                }
+                    cmd->viewangles.y += flip ? leftDesyncAngle : rightDesyncAngle;
                 break;
-             }
             }
 
             if (sendPacket)
@@ -344,56 +537,28 @@ void AntiAim::rage(UserCmd* cmd, const Vector& previousViewAngles, const Vector&
     }
 }
 
-void AntiAim::legit(UserCmd* cmd, const Vector& previousViewAngles, const Vector& currentViewAngles, bool& sendPacket) noexcept
-{
-    if (cmd->viewangles.y == currentViewAngles.y && !Tickbase::isShifting()) 
-    {
-        bool invert = config->legitAntiAim.invert.isActive();
-        float desyncAngle = localPlayer->getMaxDesyncAngle() * 2.f;
-        if (updateLby() && config->legitAntiAim.extend)
-        {
-            cmd->viewangles.y += !invert ? desyncAngle : -desyncAngle;
-            sendPacket = false;
-            return;
-        }
-
-        if (fabsf(cmd->sidemove) < 5.0f && !config->legitAntiAim.extend)
-        {
-            if (cmd->buttons & UserCmd::IN_DUCK)
-                cmd->sidemove = cmd->tickCount & 1 ? 3.25f : -3.25f;
-            else
-                cmd->sidemove = cmd->tickCount & 1 ? 1.1f : -1.1f;
-        }
-
-        if (sendPacket)
-            return;
-
-        cmd->viewangles.y += invert ? desyncAngle : -desyncAngle;
-    }
-}
-
 void AntiAim::updateInput() noexcept
 {
-    config->legitAntiAim.invert.handleToggle();
-    config->fakeAngle.invert.handleToggle();
-
-    config->rageAntiAim.manualForward.handleToggle();
-    config->rageAntiAim.manualBackward.handleToggle();
-    config->rageAntiAim.manualRight.handleToggle();
-    config->rageAntiAim.manualLeft.handleToggle();
+    config->freestandKey.handleToggle();
+    config->invert.handleToggle();
+    config->fakeFlickOnKey.handleToggle();
+    config->flipFlick.handleToggle();
+    config->manualForward.handleToggle();
+    config->manualBackward.handleToggle();
+    config->manualRight.handleToggle();
+    config->manualLeft.handleToggle();
 }
 
 void AntiAim::run(UserCmd* cmd, const Vector& previousViewAngles, const Vector& currentViewAngles, bool& sendPacket) noexcept
 {
+    auto moving_flag2{ get_moving_flag(cmd) };
     if (cmd->buttons & (UserCmd::IN_USE))
         return;
 
     if (localPlayer->moveType() == MoveType::LADDER || localPlayer->moveType() == MoveType::NOCLIP)
         return;
 
-    if (config->legitAntiAim.enabled)
-        AntiAim::legit(cmd, previousViewAngles, currentViewAngles, sendPacket);
-    else if (config->rageAntiAim.enabled || config->fakeAngle.enabled)
+    else if (config->condAA.global || config->rageAntiAim[static_cast<int>(moving_flag2)].desync)
         AntiAim::rage(cmd, previousViewAngles, currentViewAngles, sendPacket);
 }
 
@@ -401,10 +566,10 @@ bool AntiAim::canRun(UserCmd* cmd) noexcept
 {
     if (!localPlayer || !localPlayer->isAlive())
         return false;
-    
+
     updateLby(true); //Update lby timer
 
-    if (config->disableInFreezetime && (!*memory->gameRules || (*memory->gameRules)->freezePeriod()))
+    if ((*memory->gameRules)->freezePeriod())
         return false;
 
     if (localPlayer->flags() & (1 << 6))
@@ -437,19 +602,46 @@ bool AntiAim::canRun(UserCmd* cmd) noexcept
 
     if (activeWeapon->nextPrimaryAttack() <= memory->globalVars->serverTime() && (cmd->buttons & (UserCmd::IN_ATTACK)))
         return false;
-    
+
     if (activeWeapon->isKnife())
     {
         if (activeWeapon->nextSecondaryAttack() <= memory->globalVars->serverTime() && cmd->buttons & (UserCmd::IN_ATTACK2))
             return false;
     }
 
-    if (activeWeapon->itemDefinitionIndex2() == WeaponId::Revolver && activeWeapon->readyTime() <= memory->globalVars->serverTime() && cmd->buttons & (UserCmd::IN_ATTACK | UserCmd::IN_ATTACK2))
-        return false;
-
     const auto weaponIndex = getWeaponIndex(activeWeapon->itemDefinitionIndex2());
     if (!weaponIndex)
         return true;
 
     return true;
+}
+
+float AntiAim::getLastShotTime()
+{
+    return lastShotTime;
+}
+
+bool AntiAim::getIsShooting()
+{
+    return isShooting;
+}
+
+bool AntiAim::getDidShoot()
+{
+    return didShoot;
+}
+
+void AntiAim::setLastShotTime(float shotTime)
+{
+    lastShotTime = shotTime;
+}
+
+void AntiAim::setIsShooting(bool shooting)
+{
+    isShooting = shooting;
+}
+
+void AntiAim::setDidShoot(bool shot)
+{
+    didShoot = shot;
 }

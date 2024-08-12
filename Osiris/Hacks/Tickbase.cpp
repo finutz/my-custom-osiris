@@ -13,7 +13,6 @@
 #include "../SDK/Input.h"
 #include "../SDK/Prediction.h"
 UserCmd* command;
-static bool doDefensive{ false };
 void Tickbase::getCmd(UserCmd* cmd)
 {
     command = cmd;
@@ -55,6 +54,14 @@ void Tickbase::start(UserCmd* cmd) noexcept
 
     targetTickShift = std::clamp(targetTickShift, 0, maxUserCmdProcessTicks - 1);
     hasHadTickbaseActive = true;
+
+    if (cmd->buttons & UserCmd::IN_ATTACK)
+    {
+        // Update last shot time and set doDefensive to true
+        updateLastShotTime();
+        doDefensive = true;
+    }
+
 }
 
 void Tickbase::end(UserCmd* cmd, bool sendPacket) noexcept
@@ -68,8 +75,29 @@ void Tickbase::end(UserCmd* cmd, bool sendPacket) noexcept
 
     if (!config->tickbase.doubletap.isActive() && !config->tickbase.hideshots.isActive())
     {
-        targetTickShift = 0;
+        resetTickshift();
         return;
+    }
+
+    if (doDefensive)
+    {
+        // Apply defensive shift if applicable
+        if (cmd->buttons & UserCmd::IN_ATTACK && config->tickbase.doubletap.isActive())
+        {
+            shiftOffensive(cmd, targetTickShift);
+        }
+        else if (cmd->buttons & UserCmd::IN_ATTACK && config->tickbase.hideshots.isActive())
+        {
+            shiftOffensive(cmd, targetTickShift);
+        }
+
+        // Check if enough time has passed since the last shot
+        if (memory->globalVars->realtime - lastShotTime > recharge_time)
+        {
+            doDefensive = false;  // Reset doDefensive after recharge time
+        }
+
+        return; // Exit after defensive shifting
     }
 
     if (weapon->isKnife() && cmd->buttons & UserCmd::IN_ATTACK2 && config->tickbase.doubletap.isActive())
@@ -164,10 +192,16 @@ bool Tickbase::canRun() noexcept
         tickShift = 0;
         return true;
     }
-    auto data = localPlayer.get()->getActiveWeapon();
-    float recharge_time = 0;
-    recharge_time = 0.24825f;
 
+    float currentTime = memory->globalVars->realtime;
+    if (currentTime - lastShotTime > recharge_time)
+    {
+        // Enough time has passed since the last shot, so reset doDefensive
+        doDefensive = false;
+    }
+
+    auto data = localPlayer.get()->getActiveWeapon();
+    recharge_time = 0.24825f;
     if ((ticksAllowedForProcessing < targetTickShift || chokedPackets > maxUserCmdProcessTicks - targetTickShift) && memory->globalVars->realtime - realTime > recharge_time)
     {
         ticksAllowedForProcessing = min(ticksAllowedForProcessing++, maxUserCmdProcessTicks);
@@ -317,4 +351,11 @@ void Tickbase::reset() noexcept
     shiftedTickbase = 0;
     ticksAllowedForProcessing = 0;
     realTime = 0.0f;
+    targetTickShift = 0;
+    doDefensive = false;
+}
+
+void Tickbase::updateLastShotTime()
+{
+    lastShotTime = memory->globalVars->realtime;
 }

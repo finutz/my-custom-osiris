@@ -766,68 +766,121 @@ void GUI::renderMovementWindow() noexcept
 
 void GUI::renderRageAntiAimWindow() noexcept //aa
 {
-    ImGui::Columns(2, nullptr, false);
-    ImGui::SetColumnOffset(1, 345.f);
-    ImGui::Checkbox("Enable Anti Aim", &config->rageAntiAim.enabled);
-    //ImGui::Checkbox("Disable in freeztime", &config->disableInFreezetime);
-    ImGui::Combo("Pitch", &config->rageAntiAim.pitch, "Off\0Down\0FlickUp\0Up\0Random\0");
-    ImGui::Combo("Yaw base", reinterpret_cast<int*>(&config->rageAntiAim.yawBase), "Off\0Forward\0Backward\0Right\0Left\0Spin\0");
-    ImGui::Combo("Yaw modifier", reinterpret_cast<int*>(&config->rageAntiAim.yawModifier), "Off\0Jitter\0ThreeWay\0Random\0");
-    ImGui::PushItemWidth(220.0f);
-    ImGui::SliderInt("Yaw add", &config->rageAntiAim.yawAdd, -180, 180, "%d");
-    ImGui::PopItemWidth();
-
-    if (config->rageAntiAim.yawModifier == 1) //Jitter
-        ImGui::SliderInt("Jitter yaw range", &config->rageAntiAim.jitterRange, 0, 90, "%d");
-
-    if (config->rageAntiAim.yawModifier == 2) //3way
-        ImGui::SliderInt("ThreeWay range", &config->rageAntiAim.twrange, 0, 90, "%d");
-
-    if (config->rageAntiAim.yawModifier == 3) //Random
-        ImGui::SliderInt("Random range", &config->rageAntiAim.randRange, 0, 90, "%d");
-
-    if (config->rageAntiAim.yawBase == Yaw::spin)
-    {
-        ImGui::PushItemWidth(220.0f);
-        ImGui::SliderInt("Spin base", &config->rageAntiAim.spinBase, -180, 180, "%d");
+    
+        ImGui::Columns(2, nullptr, false);
+        ImGui::SetColumnOffset(1, 300.f);
+        ImGui::PushItemWidth(190.0f);
+        ImGui::PushID("nothinglmao");
+        ImGui::Checkbox("Enable Anti-Aim", &config->condAA.global);
+        static int current_category{};
+        ImGui::Combo("Conditions", &current_category, "Default\0Moving\0Jumping\0Ducking\0Duck-jumping\0Slow-walking\0");
+        if (current_category > 0)
+            ImGui::Checkbox("Override settings", current_category == 1 ? &config->condAA.moving : current_category == 2 ? &config->condAA.jumping : current_category == 3 ? &config->condAA.chrouch : current_category == 4 ? &config->condAA.cjump : &config->condAA.slowwalk);
+        ImGui::Combo("Pitch", &config->rageAntiAim[current_category].pitch,"Off\0Down\0Zero\0Up\0Flick-up\0Random\0");
+        ImGui::Combo("Yaw base", reinterpret_cast<int*>(&config->rageAntiAim[current_category].yawBase),"Off\0Forward\0Backward\0Right\0Left\0");
+        ImGui::Combo("Yaw modifier", reinterpret_cast<int*>(&config->rageAntiAim[current_category].yawModifier), "Off\0Centered\0Offset\0Random\0Three-Way\0Five-Way\0Spin\0");
+        ImGui::SliderInt("Yaw add", &config->rageAntiAim[current_category].yawAdd, -180, 180, "%d");
+        if (config->rageAntiAim[current_category].yawModifier == 1 || config->rageAntiAim[current_category].yawModifier == 2 || config->rageAntiAim[current_category].yawModifier == 7) //Jitter
+        {
+            ImGui::PushItemWidth(190.0f);
+            ImGui::SliderInt("Jitter range", &config->rageAntiAim[current_category].jitterRange, -90, 90, "%d");
+            ImGui::PopItemWidth();
+        }
+        if (config->rageAntiAim[current_category].yawModifier == 3) //Random
+        {
+            ImGui::PushItemWidth(190.0f);
+            ImGui::SliderInt("Random range", &config->rageAntiAim[current_category].randomRange, 0, 180, "%d");
+            ImGui::PopItemWidth();
+        }
+        if (config->rageAntiAim[current_category].yawModifier == 4 || config->rageAntiAim[current_category].yawModifier == 5)
+        {
+            ImGui::PushItemWidth(190.0f);
+            ImGui::SliderInt("Range", &config->rageAntiAim[current_category].jitterRange, -90, 90, "%d");
+            ImGui::PopItemWidth();
+        }
+        if (config->rageAntiAim[current_category].yawModifier == 6) //Spin
+        {
+            ImGui::PushItemWidth(190.0f);
+            ImGui::SliderFloat("Spin base", &config->rageAntiAim[current_category].spinBase, -180, 180, "%.f");
+            ImGui::PopItemWidth();
+        }
+        if (config->rageAntiAim[current_category].yawModifier == 7)
+        {
+            ImGui::PushItemWidth(190.0f);
+            ImGui::SliderInt("Tick delay", &config->rageAntiAim[current_category].tickDelays, 2, 16);
+            ImGui::PopItemWidth();
+        }
+        ImGui::Checkbox("At targets", &config->rageAntiAim[current_category].atTargets);
+        ImGui::Checkbox("Fake flick", &config->rageAntiAim[current_category].fakeFlick);
+        ImGui::PushID("Fake flickerino");
+        ImGui::SameLine();
+        ImGui::hotkey2("", config->fakeFlickOnKey, 80.f);
+        if (config->rageAntiAim[current_category].fakeFlick)
+        {
+            ImGui::SliderInt("Fake flick rate", &config->rageAntiAim[current_category].fakeFlickRate, 5, 64, "%d");
+            ImGui::hotkey2("Fake flick flip", config->flipFlick);
+        }
         ImGui::PopItemWidth();
-    }
+        ImGui::PopID();
+        ImGui::hotkey2("Forward", config->manualForward, 60.f);
+        ImGui::SameLine();
+        ImGui::hotkey2("Backward", config->manualBackward, 60.f);
+        ImGui::hotkey2("Right", config->manualRight, 60.f);
+        ImGui::SameLine();
+        ImGui::hotkey2("Left", config->manualLeft, 60.f);
+        ImGui::Checkbox("Freestand", &config->rageAntiAim[current_category].freestand);
+        ImGui::SameLine();
+        ImGui::PushID("cevaasdeasd");
+        ImGui::hotkey2("", config->freestandKey);
+        ImGui::PopID();
+        ImGui::NextColumn();
+        ImGui::Checkbox("Enable Desync", &config->rageAntiAim[current_category].desync);
+        ImGui::SameLine();
+        ImGui::hotkey2("Invert Key", config->invert, 80.0f);
+        ImGui::PushItemWidth(220.0f);
+        ImGui::SliderInt("Left limit", &config->rageAntiAim[current_category].leftLimit, 0, 58, "%d");
+        ImGui::PopItemWidth();
 
-    ImGui::Checkbox("At targets", &config->rageAntiAim.atTargets);
+        ImGui::PushItemWidth(220.0f);
+        ImGui::SliderInt("Right limit", &config->rageAntiAim[current_category].rightLimit, 0, 58, "%d");
+        ImGui::PopItemWidth();
+        ImGui::PushItemWidth(220.0f);
+        ImGui::Combo("Peek Mode", &config->rageAntiAim[current_category].peekMode, "Off\0Peek real\0Peek fake\0Jitter\0");
+        ImGui::Combo("LBY mode", &config->rageAntiAim[current_category].lbyMode, "Normal\0Opposite\0Sway\0");
+        ImGui::Checkbox("Roll Angles", &config->rageAntiAim[current_category].roll.enabled);
+        ImGui::SameLine();
+        ImGui::PushID("roll");
+        if (ImGui::Button("..."))
+            ImGui::OpenPopup("");
 
-    ImGui::Text("Manual Anti-Aim");
-    ImGui::hotkey2("Forward", config->rageAntiAim.manualForward, 60.f);
-    ImGui::SameLine();
-    ImGui::hotkey2("Backward", config->rageAntiAim.manualBackward, 60.f);
-    ImGui::hotkey2("Right", config->rageAntiAim.manualRight, 60.f);
-    ImGui::SameLine();
-    ImGui::hotkey2("Left", config->rageAntiAim.manualLeft, 60.f);
-
-
-    ImGui::NextColumn();
-
-    ImGui::Checkbox("Enable Fake Angle", &config->fakeAngle.enabled);
-    ImGui::hotkey2("Invert Key", config->fakeAngle.invert, 80.0f);
-
-    ImGui::PushItemWidth(220.0f);
-    ImGui::SliderInt("Left limit", &config->fakeAngle.leftLimit, 0, 60, "%d");
-    ImGui::PopItemWidth();
-
-    ImGui::PushItemWidth(220.0f);
-    ImGui::SliderInt("Right limit", &config->fakeAngle.rightLimit, 0, 60, "%d");
-    ImGui::PopItemWidth();
-
-    ImGui::Combo("Peek Mode", &config->fakeAngle.peekMode, "Off\0Peek real\0Peek fake\0Jitter\0");
-    ImGui::Combo("Lby mode", &config->fakeAngle.lbyMode, "Normal\0Opposite\0Sway\0");
-
-    ImGui::Text("");
-
-    ImGui::Checkbox("Enable fakelag", &config->fakelag.enabled);
-    ImGui::Combo("fakelag mode", &config->fakelag.mode, "Static\0Adaptative\0Random\0");
-    ImGui::PushItemWidth(220.0f);
-    ImGui::SliderInt("Limit", &config->fakelag.limit, 1, 15, "%d");
-
-    ImGui::Columns(2);
+        if (ImGui::BeginPopup(""))
+        {
+            ImGui::SliderFloat("Roll Add", &config->rageAntiAim[current_category].roll.add, -90, 90, "%.0f");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Caution : going over -50 or 50 roll will get u detected on most servers");
+            ImGui::EndPopup();
+        }
+        ImGui::PopID();
+        ImGui::Combo("Fake-lag", &config->fakelag.mode, "Static\0Adaptive\0Random\0");
+        ImGui::PushItemWidth(220.0f);
+        ImGui::SliderInt("Fake-lag Limit", &config->fakelag.limit, 1, 15, "%d");
+        //ImGui::PushID("Slide type lmfao");
+        //ImGui::Combo(skCrypt("Leg movement"), &config->misc.moonwalk_style, skCrypt("No slide\0Normal slide\0Forward slide\0Backward slide\0Allah legs\0"));
+        ImGui::PopID();
+        ImGui::Checkbox("Fakeduck", &config->misc.fakeduck);
+        ImGui::SameLine();
+        ImGui::PushID("Fakeduck Key");
+        ImGui::hotkey2("", config->misc.fakeduckKey);
+        ImGui::PopID();
+        ImGui::Checkbox("Slowwalk", &config->misc.slowwalk);
+        ImGui::SameLine();
+        ImGui::PushID("Slowwalk Key");
+        ImGui::hotkey2("", config->misc.slowwalkKey);
+        ImGui::PopID();
+        if (config->misc.slowwalk) {
+            ImGui::SliderInt("Slowwalk Amount", &config->misc.slowwalkAmnt, 0, 50, config->misc.slowwalkAmnt ? "%d u/s" : "Default");
+        }
+        
 }
 
 void GUI::renderDefensiveWindow() noexcept
@@ -2253,17 +2306,17 @@ void GUI::renderConfigWindow() noexcept
                 case 2: config->legitAntiAim = { }; break;
                 case 3: config->ragebot = { }; config->ragebotKey.reset();  break;
                 case 4: config->rageAntiAim = { };  break;
-                case 5: config->fakeAngle = { }; break;
-                case 6: config->fakelag = { }; break;
-                case 7: config->backtrack = { }; break;
-                case 8: config->triggerbot = { }; config->triggerbotKey.reset(); break;
-                case 9: Glow::resetConfig(); break;
-                case 10: config->chams = { }; config->chamsKey.reset(); break;
-                case 11: config->streamProofESP = { }; break;
-                case 12: config->visuals = { }; break;
-                case 13: config->skinChanger = { }; SkinChanger::scheduleHudUpdate(); break;
-                case 14: Sound::resetConfig(); break;
-                case 15: config->misc = { };  Misc::updateClanTag(true); break;
+                //case 5: config->fakeAngle = { }; break;
+                case 5: config->fakelag = { }; break;
+                case 6: config->backtrack = { }; break;
+                case 7: config->triggerbot = { }; config->triggerbotKey.reset(); break;
+                case 8: Glow::resetConfig(); break;
+                case 9: config->chams = { }; config->chamsKey.reset(); break;
+                case 10: config->streamProofESP = { }; break;
+                case 11: config->visuals = { }; break;
+                case 12: config->skinChanger = { }; SkinChanger::scheduleHudUpdate(); break;
+                case 13: Sound::resetConfig(); break;
+                case 14: config->misc = { };  Misc::updateClanTag(true); break;
                 }
             }
         }

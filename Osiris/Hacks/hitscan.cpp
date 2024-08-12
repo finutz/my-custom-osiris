@@ -73,6 +73,8 @@ static bool traceToExit(const Trace& enterTrace, const Vector& start, const Vect
     return false;
 }
 
+
+
 static float handleBulletPenetration(SurfaceData* enterSurfaceData, const Trace& enterTrace, const Vector& direction, Vector& result, float penetration, float damage) noexcept
 {
     Vector exitPoint;

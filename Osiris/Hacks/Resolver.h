@@ -9,21 +9,12 @@ namespace Resolver
 {
 	void reset() noexcept;
 
-	void resolve_entity(const Animations::Players& player, Entity* entity);
-
-	float resolve_shot(const Animations::Players& player, Entity* entity);
-
-	void setup_detect(Animations::Players& player, Entity* entity);
-
 	void processMissedShots() noexcept;
-	void CmdGrabber(UserCmd* cmd1);
 	void saveRecord(int playerIndex, float playerSimulationTime) noexcept;
 	void getEvent(GameEvent* event) noexcept;
 
 	void runPreUpdate(Animations::Players player, Entity* entity) noexcept;
 	void runPostUpdate(Animations::Players player, Entity* entity) noexcept;
-
-	void detect_side(Entity* entity, int* side);
 
 	void updateEventListeners(bool forceRemove = false) noexcept;
 

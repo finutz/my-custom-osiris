@@ -4,6 +4,8 @@ struct UserCmd;
 
 namespace Tickbase
 {
+	float recharge_time = { 0.24825f };
+	float lastShotTime{ 0.0f };
 	float realTime{ 0.0f };
 	int targetTickShift{ 0 };
 	int tickShift{ 0 };
@@ -15,6 +17,8 @@ namespace Tickbase
 	bool shifting{ false };
 	bool finalTick{ false };
 	bool hasHadTickbaseActive{ false };
+	bool recharging{ false };
+	static bool doDefensive{ false };
 	int nextShiftAmount = 0;
 	void getCmd(UserCmd* cmd);
 	void start(UserCmd* cmd) noexcept;
@@ -32,6 +36,7 @@ namespace Tickbase
 	void resetTickshift() noexcept;
 	bool& isFinalTick() noexcept;
 	bool& isShifting() noexcept;
+	void updateLastShotTime();
 	void updateInput() noexcept;
 	void reset() noexcept;
 }

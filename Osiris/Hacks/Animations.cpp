@@ -16,15 +16,6 @@
 #include "../SDK/Input.h"
 #include "../SDK/Vector.h"
 
-enum ADVANCED_ACTIVITY : int
-{
-    ACTIVITY_NONE = 0,
-    ACTIVITY_JUMP,
-    ACTIVITY_LAND,
-    ACTIVE_LAND_LIGHT,
-    ACTIVE_LAND_HEAVY
-};
-
 static std::array<Animations::Players, 65> players{};
 static std::array<matrix3x4, MAXSTUDIOBONES> fakematrix{};
 static std::array<matrix3x4, MAXSTUDIOBONES> fakelagmatrix{};
@@ -148,9 +139,9 @@ void Animations::update(UserCmd* cmd, bool& _sendPacket) noexcept
         {
             for (auto& i : realmatrix)
             {
-                i[0][3] -= localPlayer->getRenderOrigin().x;
-                i[1][3] -= localPlayer->getRenderOrigin().y;
-                i[2][3] -= localPlayer->getRenderOrigin().z;
+                i[0][3] -= origin.x;
+                i[1][3] -= origin.y;
+                i[2][3] -= origin.z;
             }
         }
         localAngle = cmd->viewangles;
@@ -244,25 +235,31 @@ void Animations::fake() noexcept
     }
 }
 
-void Animations::renderStart(FrameStage stage) noexcept {
-    if (stage != FrameStage::RENDER_START || !localPlayer || interfaces->engine->isHLTV())
+void Animations::renderStart(FrameStage stage) noexcept
+{
+    if (stage != FrameStage::RENDER_START)
         return;
 
-    const std::array<int, 5> skipLayers = {
-        ANIMATION_LAYER_FLINCH,
-        ANIMATION_LAYER_FLASHED,
-        ANIMATION_LAYER_WHOLE_BODY,
-        ANIMATION_LAYER_WEAPON_ACTION,
-        ANIMATION_LAYER_WEAPON_ACTION_RECROUCH
-    };
+    if (!localPlayer)
+        return;
 
-    for (int i = 0; i < 13; i++) {
-        if (std::find(skipLayers.begin(), skipLayers.end(), i) != skipLayers.end())
+    if (interfaces->engine->isHLTV())
+        return;
+
+    for (int i = 0; i < 13; i++)
+    {
+        if (i == ANIMATION_LAYER_FLINCH ||
+            i == ANIMATION_LAYER_FLASHED ||
+            i == ANIMATION_LAYER_WHOLE_BODY ||
+            i == ANIMATION_LAYER_WEAPON_ACTION ||
+            i == ANIMATION_LAYER_WEAPON_ACTION_RECROUCH)
+        {
             continue;
-
-        auto* animLayer = localPlayer->getAnimationLayer(i);
-        if (animLayer)
-            *animLayer = layers.at(i);
+        }
+        auto& l = *localPlayer->getAnimationLayer(i);
+        if (!&l)
+            continue;
+        l = layers.at(i);
     }
 }
 
@@ -427,8 +424,6 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 player.velocity.y = 0.f;
             }
 
-            //auto& prev_records = players.at(i);
-
             Resolver::runPreUpdate(player, entity);
 
             //Run animations
@@ -477,8 +472,6 @@ void Animations::handlePlayers(FrameStage stage) noexcept
                 entity->duckAmount() = player.duckAmount;
             }
             updatingEntity = false;
-
-           // prev_records = players.at(i);///maybe help for better post updat? 
 
             Resolver::runPostUpdate(player, entity);
 

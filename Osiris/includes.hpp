@@ -203,7 +203,7 @@ public:
 };
 
 
-/*
+
 inline int get_moving_flag(const UserCmd* cmd)
 {
 	if (cmd->buttons & UserCmd::IN_USE && config->condAA.onUse)
@@ -227,44 +227,5 @@ inline int get_moving_flag(const UserCmd* cmd)
 	}
 	return AntiAim::latest_moving_flag = AntiAim::freestanding;
 }
-*/
 
-/*int WeaponClassSex()
-{
-	if (!localPlayer || !localPlayer->isAlive())
-		return -1;
 
-	auto weapon = localPlayer->getActiveWeapon();
-	if (!weapon)
-		return -1;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Elite || weapon->itemDefinitionIndex2() == WeaponId::Hkp2000 || weapon->itemDefinitionIndex2() == WeaponId::P250 || weapon->itemDefinitionIndex2() == WeaponId::Usp_s || weapon->itemDefinitionIndex2() == WeaponId::Cz75a || weapon->itemDefinitionIndex2() == WeaponId::Tec9 || weapon->itemDefinitionIndex2() == WeaponId::Fiveseven || weapon->itemDefinitionIndex2() == WeaponId::Glock)
-		return 0;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Deagle)
-		return 1;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Revolver)
-		return 2;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Mac10 || weapon->itemDefinitionIndex2() == WeaponId::Mp9 || weapon->itemDefinitionIndex2() == WeaponId::Mp7 || weapon->itemDefinitionIndex2() == WeaponId::Mp5sd || weapon->itemDefinitionIndex2() == WeaponId::Ump45 || weapon->itemDefinitionIndex2() == WeaponId::P90 || weapon->itemDefinitionIndex2() == WeaponId::Bizon)
-		return 3;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::M249 || weapon->itemDefinitionIndex2() == WeaponId::Negev)
-		return 4;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Sawedoff || weapon->itemDefinitionIndex2() == WeaponId::Mag7 || weapon->itemDefinitionIndex2() == WeaponId::Xm1014 || weapon->itemDefinitionIndex2() == WeaponId::Nova)
-		return 5;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Ak47 || weapon->itemDefinitionIndex2() == WeaponId::M4A1 || weapon->itemDefinitionIndex2() == WeaponId::M4a1_s || weapon->itemDefinitionIndex2() == WeaponId::GalilAr || weapon->itemDefinitionIndex2() == WeaponId::Aug || weapon->itemDefinitionIndex2() == WeaponId::Sg553 || weapon->itemDefinitionIndex2() == WeaponId::Famas)
-		return 6;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Scar20 || weapon->itemDefinitionIndex2() == WeaponId::G3SG1)
-		return 7;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Ssg08)
-		return 8;
-
-	if (weapon->itemDefinitionIndex2() == WeaponId::Awp)
-		return 9;
-}*/

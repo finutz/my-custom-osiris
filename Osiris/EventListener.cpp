@@ -67,7 +67,7 @@ void EventListener::fireGameEvent(GameEvent* event)
         SkinChanger::updateStatTrak(*event);
         SkinChanger::overrideHudIcon(*event);
         Misc::killfeedChanger(*event);
-        Misc::killMessage(*event);
+            Misc::killMessage(*event);
         Misc::killSound(*event);
         Resolver::getEvent(event);
         break;

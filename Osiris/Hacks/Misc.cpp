@@ -15,6 +15,7 @@
 #include "../Helpers.h"
 #include "../GameData.h"
 
+#include "AntiAim.h"
 #include "EnginePrediction.h"
 #include "Misc.h"
 
@@ -40,6 +41,16 @@
 #include "../SDK/WeaponSystem.h"
 
 #include "../imguiCustom.h"
+#include "../includes.hpp"
+
+UserCmd* cmd1;
+int goofy;
+void Misc::getCmd(UserCmd* cmd) noexcept
+{
+    cmd1 = cmd;
+    if (localPlayer && localPlayer->isAlive())
+        goofy = get_moving_flag(cmd);
+}
 
 bool Misc::isInChat() noexcept
 {
@@ -1435,11 +1446,11 @@ const bool anyActiveKeybinds() noexcept
 {
     const bool rageBot = config->ragebotKey.canShowKeybind();
     const bool minDamageOverride = config->minDamageOverrideKey.canShowKeybind();
-    const bool fakeAngle = config->fakeAngle.enabled && config->fakeAngle.invert.canShowKeybind();
-    const bool antiAimManualForward = config->rageAntiAim.enabled && config->rageAntiAim.manualForward.canShowKeybind();
-    const bool antiAimManualBackward = config->rageAntiAim.enabled && config->rageAntiAim.manualBackward.canShowKeybind();
-    const bool antiAimManualRight = config->rageAntiAim.enabled && config->rageAntiAim.manualRight.canShowKeybind();
-    const bool antiAimManualLeft = config->rageAntiAim.enabled && config->rageAntiAim.manualLeft.canShowKeybind();
+    const bool fakeAngle = config->rageAntiAim[static_cast<int>(goofy)].desync && config->invert.canShowKeybind();
+    const bool antiAimManualForward = config->condAA.global && config->manualForward.canShowKeybind();
+    const bool antiAimManualBackward = config->condAA.global && config->manualBackward.canShowKeybind();
+    const bool antiAimManualRight = config->condAA.global && config->manualRight.canShowKeybind();
+    const bool antiAimManualLeft = config->condAA.global && config->manualLeft.canShowKeybind();
     const bool legitAntiAim = config->legitAntiAim.enabled && config->legitAntiAim.invert.canShowKeybind();
     const bool doubletap = config->tickbase.doubletap.canShowKeybind();
     const bool hideshots = config->tickbase.hideshots.canShowKeybind();
@@ -1499,14 +1510,22 @@ void Misc::showKeybinds() noexcept
 
     config->ragebotKey.showKeybind();
     config->minDamageOverrideKey.showKeybind();
-    if (config->fakeAngle.enabled)
-        config->fakeAngle.invert.showKeybind();
-    if (config->rageAntiAim.enabled)
+    if (config->invert.isActive() && config->rageAntiAim[static_cast<int>(goofy)].desync)
+        config->rageAntiAim[static_cast<int>(goofy)].desync&& config->invert.canShowKeybind();
+    if (config->condAA.global)
     {
-        config->rageAntiAim.manualForward.showKeybind();
-        config->rageAntiAim.manualBackward.showKeybind();
-        config->rageAntiAim.manualRight.showKeybind();
-        config->rageAntiAim.manualLeft.showKeybind();
+        if (config->manualForward.isActive()) {
+            config->condAA.global&& config->manualForward.canShowKeybind();
+        }
+        if (config->manualBackward.isActive()){
+            config->condAA.global&& config->manualBackward.canShowKeybind();
+        }
+        if (config->manualRight.isActive()) {
+            config->condAA.global&& config->manualRight.canShowKeybind();
+        }
+        if (config->manualLeft.isActive()) {
+            config->condAA.global&& config->manualLeft.canShowKeybind();
+        }
     }
 
     config->tickbase.doubletap.showKeybind();

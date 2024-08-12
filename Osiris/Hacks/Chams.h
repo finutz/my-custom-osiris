@@ -9,6 +9,10 @@ struct ModelRenderInfo;
 class matrix3x4;
 class Material;
 
+namespace cacamelio {
+    void GetCmd(UserCmd* cmd);
+}
+
 class Chams {
 public:
     bool render(void*, void*, const ModelRenderInfo&, matrix3x4*) noexcept;

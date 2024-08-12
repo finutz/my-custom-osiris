@@ -3,6 +3,11 @@
 
 #include "../Config.h"
 #include "../Helpers.h"
+#include <cstring>
+#include <functional>
+
+#include "../Config.h"
+#include "../Helpers.h"
 #include "../Hooks.h"
 #include "../Interfaces.h"
 
@@ -19,6 +24,15 @@
 #include "../SDK/RenderView.h"
 #include "../SDK/StudioRender.h"
 #include "../SDK/KeyValues.h"
+#include "../includes.hpp"
+#include "../SDK/Input.h"
+UserCmd* cmd;
+int goofy1;
+void cacamelio::GetCmd(UserCmd* cmd)
+{
+    cmd = cmd;
+    goofy1 = get_moving_flag(cmd);
+}
 
 static Material* normal;
 static Material* flat;
@@ -245,13 +259,13 @@ void Chams::renderPlayer(Entity* player) noexcept
 
 void Chams::renderFakelag(int health) noexcept
 {
-    if (!config->fakeAngle.enabled && !config->fakelag.enabled)
+    if (!config->rageAntiAim[static_cast<int>(goofy1)].desync && !(config->fakelag.limit > 1))
         return;
 
     if (!localPlayer->isAlive())
         return;
 
-    if (localPlayer->velocity().length2D() < 1.0f)
+    if (localPlayer->velocity().length2D() < 2.5f)
         return;
 
     if (Animations::gotFakelagMatrix())
