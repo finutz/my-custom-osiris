@@ -4,8 +4,10 @@
 <P> - broken tickbase (hide shots does not work , and double tap is bipolar) </P>
 
 ## Newest update (08.08.2024) :
-<p> - fixed gui (again) </p>
-<p> - downgraded resolver cause of bugs (soon resolver rework??) </p>
+<p> - Huge AntiAimbot update  </p>
+<p> - added mediocre defensive check (soon defensive anti aim) </p>
+<p> - small fake lag update </p>
+<p> - completly removed the resolver (soon new resolver (probably ima steal it from another cheat))</p>
 
 
 ![image](https://github.com/finutz/my-custom-osiris/assets/84587349/d5cf801b-65bd-4dd1-bf0f-ed668a2b9765)
@@ -20,6 +22,9 @@
 <p> - fix tickbase  </p>
 
 ### Older updates :
+update (08.08.2024) :
+<p> - fixed gui (again) </p>
+<p> - downgraded resolver cause of bugs (soon resolver rework??) </p>
 
 update (09.07.2024):
 <p> - fixed gui </p>
@@ -32,7 +37,6 @@ update (07.07.2024) :
 update (12.06.2024) :
 <p> - animfix changes </p>
 <p> - small improvements to hitscan </p>
-
 
  05.06.2024 update :
 <p> - finished resolver </p>
