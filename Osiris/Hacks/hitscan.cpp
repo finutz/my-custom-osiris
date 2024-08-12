@@ -20,6 +20,9 @@
 #include <thread>
 int maxThreadNum = (std::thread::hardware_concurrency());
 
+#define TICKS_TO_TIME(t) (memory->globalVars->m_intervalpertick * (t))
+#define TICK_INTERVAL            ( memory->globalVars->currenttime )
+#define TIME_TO_TICKS( dt )        ( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
 
 Vector hitscan::calculateRelativeAngle(const Vector& source, const Vector& destination, const Vector& viewAngles) noexcept
 {
@@ -323,7 +326,9 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
     const float mi[3] = { min.x, min.y, min.z };
     const float ma[3] = { max.x, max.y, max.z };
 
-    for (auto i = 0; i < 6; i++) {
+    bool result = start_solid || (t1 < t2 && t1 >= 0.0f);
+#pragma omp parallel for num_threads(maxThreadNum)
+    for (auto i = 0; i < 6; ++i) {
         if (i >= 3) {
             const auto j = i - 3;
 
@@ -336,7 +341,7 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
 
         if (d1 > 0.0f && d2 > 0.0f)
-            return false;
+            result = false;
 
         if (d1 <= 0.0f && d2 <= 0.0f)
             continue;
@@ -360,8 +365,9 @@ bool intersectLineWithBb(Vector& start, Vector& end, Vector& min, Vector& max) n
         }
     }
 
-    return start_solid || (t1 < t2 && t1 >= 0.0f);
+    return result;
 }
+
 
 void inline sinCos(float radians, float* sine, float* cosine)
 {
@@ -597,6 +603,9 @@ bool hitscan::hitChance(Entity* localPlayer, Entity* entity, StudioHitboxSet* se
         {
             if (hitboxIntersection(matrix, hitbox, set, localEyePosition, localEyePosition + direction))
             {
+                if (localPlayer->getActiveWeapon()->itemDefinitionIndex2() == WeaponId::Ssg08 && !(localPlayer->flags() & FL_ONGROUND))
+                    if (inaccuracy < 0.009f)
+                        return false;
                 hits++;
                 break;
             }

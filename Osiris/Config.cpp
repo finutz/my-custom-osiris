@@ -328,6 +328,20 @@ static void from_json(const json& j, Config::RageAntiAimConfig& a)
     read(j, "Peek mode", a.peekMode);
     read(j, "Lby mode", a.lbyMode);
 }
+static void from_json(const json& j, Config::AntiAimConditions& c)
+{
+    read<value_t::object>(j, "Visualize", c.visualize);
+    read(j, "Visualize type", c.visualizeType);
+    read(j, "Visualize offset", c.visualizeOffset);
+    read(j, "Visualize size", c.visualizeSize);
+    read(j, "G", c.global);
+    read(j, "M", c.moving);
+    read(j, "S", c.slowwalk);
+    read(j, "J", c.jumping);
+    read(j, "CJ", c.cjump);
+    read(j, "C", c.chrouch);
+    read(j, "BREAKERS", c.animBreakers);
+}
 
 /*
 static void from_json(const json& j, Config::FakeAngle& a)
@@ -1142,6 +1156,23 @@ static void to_json(json& j, const Config::RageAntiAimConfig& o, const Config::R
     WRITE("Peek mode", peekMode);
     WRITE("Lby mode", lbyMode);
 }
+
+static void to_json(json& j, const Config::AntiAimConditions& o, const Config::AntiAimConditions& dummy = {})
+{
+    WRITE("Visualize type", visualizeType);
+    WRITE("Visualize offset", visualizeOffset);
+    WRITE("Visualize size", visualizeSize);
+    WRITE("Visualize", visualize);
+    WRITE("G", global);
+    WRITE("M", moving);
+    WRITE("S", slowwalk);
+    WRITE("J", jumping);
+    WRITE("CJ", cjump);
+    WRITE("C", chrouch);
+    WRITE("BREAKERS", animBreakers);
+}
+
+
 
 /*
 static void to_json(json& j, const Config::FakeAngle& o, const Config::FakeAngle& dummy = {})

@@ -12,6 +12,11 @@ namespace Resolver
 	void processMissedShots() noexcept;
 	void saveRecord(int playerIndex, float playerSimulationTime) noexcept;
 	void getEvent(GameEvent* event) noexcept;
+	
+	//kaka solver
+	void detect_side(Entity* entity, int* side);
+	void resolve_entity(const Animations::Players& player, Entity* entity);
+	//end kaka solver
 
 	void runPreUpdate(Animations::Players player, Entity* entity) noexcept;
 	void runPostUpdate(Animations::Players player, Entity* entity) noexcept;

@@ -847,25 +847,10 @@ void GUI::renderRageAntiAimWindow() noexcept //aa
         ImGui::PushItemWidth(220.0f);
         ImGui::Combo("Peek Mode", &config->rageAntiAim[current_category].peekMode, "Off\0Peek real\0Peek fake\0Jitter\0");
         ImGui::Combo("LBY mode", &config->rageAntiAim[current_category].lbyMode, "Normal\0Opposite\0Sway\0");
-        ImGui::Checkbox("Roll Angles", &config->rageAntiAim[current_category].roll.enabled);
-        ImGui::SameLine();
-        ImGui::PushID("roll");
-        if (ImGui::Button("..."))
-            ImGui::OpenPopup("");
-
-        if (ImGui::BeginPopup(""))
-        {
-            ImGui::SliderFloat("Roll Add", &config->rageAntiAim[current_category].roll.add, -90, 90, "%.0f");
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Caution : going over -50 or 50 roll will get u detected on most servers");
-            ImGui::EndPopup();
-        }
         ImGui::PopID();
         ImGui::Combo("Fake-lag", &config->fakelag.mode, "Static\0Adaptive\0Random\0");
         ImGui::PushItemWidth(220.0f);
         ImGui::SliderInt("Fake-lag Limit", &config->fakelag.limit, 1, 15, "%d");
-        //ImGui::PushID("Slide type lmfao");
-        //ImGui::Combo(skCrypt("Leg movement"), &config->misc.moonwalk_style, skCrypt("No slide\0Normal slide\0Forward slide\0Backward slide\0Allah legs\0"));
         ImGui::PopID();
         ImGui::Checkbox("Fakeduck", &config->misc.fakeduck);
         ImGui::SameLine();

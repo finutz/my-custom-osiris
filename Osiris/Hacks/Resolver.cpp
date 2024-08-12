@@ -8,7 +8,7 @@
 
 std::deque<Resolver::SnapShot> snapshots;
 
-bool resolver = false;
+bool resolver = true;
 
 void Resolver::reset() noexcept
 {
@@ -180,6 +180,9 @@ void Resolver::processMissedShots() noexcept
 	if (!resolverMissed)
 		Logger::addLog("Missed due to spread");
 }
+//kaka solver moment 
+
+
 
 void Resolver::runPreUpdate(Animations::Players player, Entity* entity) noexcept
 {
